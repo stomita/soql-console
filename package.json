@@ -1,0 +1,20 @@
+{
+  "author": "Shinichi Tomita <shinichi.tomita@gmail.com>",
+  "name": "soql-completion",
+  "version": "0.0.0",
+  "dependencies": {},
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+    "coffee-script":"1.3.x",
+    "jison":"0.3.x"
+  },
+  "devDependencies": {
+    "glob": "3.1.x",
+    "requirejs": "2.1.x",
+    "muffin": "0.6.x"
+  }
+}

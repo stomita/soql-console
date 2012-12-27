@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script src="./lib/requirejs/require.js" data-main="./js/main"></script>
+    <style>
+#soql {
+  width: 500px;
+  height: 150px;
+}
+#output {
+  margin: 0px;
+  padding: 5px;
+  width: 500px;
+  height: 150px;
+  border: 2px dotted blue;
+  overflow: auto;
+}
+    </style>
+  </head>
+
+  <body>
+    <textarea id="soql"></textarea>
+    <ul id="candidates"></ul>
+    <div id="output"></div>
+  </body>
+</html>
