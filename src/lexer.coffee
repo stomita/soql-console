@@ -58,8 +58,8 @@ class Lexer
     @tokenizeFromWord('SELECT') or
     @tokenizeFromWord('FROM') or
     @tokenizeFromWord('WHERE') or
-    @tokenizeFromWord('GROUP_BY', 'GROUP BY') or
-    @tokenizeFromWord('ORDER_BY', 'ORDER BY') or
+    @tokenizeFromRegex('GROUP_BY', /^(GROUP\s+BY)/i) or
+    @tokenizeFromRegex('ORDER_BY', /^(ORDER\s+BY)/i) or
     @tokenizeFromWord('HAVING') or
     @tokenizeFromWord('LIMIT') or
     @tokenizeFromWord('OFFSET') or

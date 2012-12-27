@@ -2,171 +2,185 @@
 
 unwrap = /^function\s*\(\)\s*\{\s*return\s*([\s\S]*);\s*\}/
 
-o = (patternString, type, action) ->
-  patternString = patternString.replace /\s{2,}/g, ' '
-  num = patternString.split(/\s/).length
-  args = ('$'+i for i in [1..num]).join(', ')
-  if num == 1
-    if type?
-      action = "$$ = new yy.Node('#{type}', $1);"
-    else
-      action = "$$ = $1;"
-  else
-    type = type ? ''
-    action = "$$ = new yy.Node('#{type}', null, [ #{args} ]);"
-  [ patternString, action, undefined ]
+o = (patternString, action) ->
+  (symbol) ->
+
 
 grammar =
+
   Root: [
-    o 'Query EOF'
+    'Query EOF'
   ]
 
   Query: [
-    o 'SelectQuery'
-    o 'SelectQuery LimitClause'
-    o 'SelectQuery LimitClause OffsetClause'
+    'SelectQuery'
+    'SelectQuery LimitClause'
+    'SelectQuery LimitClause OffsetClause'
   ]
 
   SelectQuery: [
-    o 'Select'
-    o 'Select OrderClause'
-    o 'Select GroupClause'
-    o 'Select GroupClause OrderClause'
-  ]
-
-  Select : [
-    o 'SelectClause'
-    o 'SelectClause WhereClause'
+    'Select'
+    'Select OrderClause'
+    'Select GroupClause'
+    'Select GroupClause OrderClause'
   ]
 
   InnerSelect : [
-    o 'SelectClause'
-    o 'SelectClause WhereClause'
-    o 'SelectClause WhereClause LimitClause'
+    'Select'
+    'Select LimitClause'
+    'Select OrderClause'
+    'Select OrderClause LimitClause'
+  ]
+
+  Select : [
+    'SelectClause'
+    'SelectClause WhereClause'
   ]
 
   SelectClause: [
-    o 'SELECT SelectFieldList FROM ObjectType'
+    'SELECT SelectFieldList FROM ObjectType'
   ]
 
   SelectFieldList: [
-    o 'SelectField'
-    o 'SelectField SEPARATOR SelectFieldList'
+    'SelectField'
+    'SelectField SEPARATOR SelectFieldList'
   ]
 
   SelectField: [
-    o 'Field'
-    o 'Field AS Literal'
-    o 'LEFT_PAREN InnerSelect RIGHT_PAREN'
+    'Field'
+    'Field AS Literal'
+    'LEFT_PAREN InnerSelect RIGHT_PAREN'
   ]
 
   ObjectType: [
-    o 'Literal',  'ObjectType'
+    'Literal'
   ]
 
   WhereClause: [
-    o 'WHERE ConditionExpressionList'
+    'WHERE ConditionExpressionList'
   ]
 
   LimitClause: [
-    o 'LIMIT Number'
+    'LIMIT Number'
   ]
 
   OffsetClause: [
-    o 'OFFSET Number'
+    'OFFSET Number'
   ]
 
   OrderClause: [
-    o 'ORDER_BY OrderArgList'
+    'ORDER_BY OrderArgList'
   ]
 
   OrderArgList: [
-    o 'OrderArg'
-    o 'OrderArg SEPARATOR OrderArgList'
+    'OrderArg'
+    'OrderArg SEPARATOR OrderArgList'
   ]
 
   OrderArg: [
-    o 'Field'
-    o 'Field DIRECTION'
+    'Field'
+    'Field DIRECTION'
   ]
 
   GroupClause: [
-    o 'GroupBasicClause'
-    o 'GroupBasicClause HavingClause'
+    'GroupBasicClause'
+    'GroupBasicClause HavingClause'
   ]
 
   GroupBasicClause: [
-    o 'GROUP_BY FieldList'
+    'GROUP_BY FieldList'
   ]
 
   HavingClause: [
-    o 'HAVING ConditionExpressionList'
+    'HAVING ConditionExpressionList'
   ]
 
   ConditionExpressionList: [
-    o 'ConditionExpression'
-    o 'ConditionExpression CONDITIONAL ConditionExpressionList'
-    o 'LEFT_PAREN ConditionExpressionList RIGHT_PAREN'
+    'ConditionExpression'
+    'ConditionExpression CONDITIONAL ConditionExpressionList'
+    'LEFT_PAREN ConditionExpressionList RIGHT_PAREN'
   ]
 
   ConditionExpression: [
-    o 'Field OPERATOR Value'
+    'Field OPERATOR Value'
   ]
 
   FieldList: [
-    o 'Field'
-    o 'Field SEPARATOR FieldList'
+    'Field'
+    'Field SEPARATOR FieldList'
   ]
 
   Field: [
-    o 'FieldName'
-    o 'FieldName DOT Field'
+    'FieldName'
+    'FieldName DOT Field'
   ]
 
   FieldName: [
-    o 'Literal', 'FieldName'
+    'Literal'
   ]
 
   Value: [
-    o 'NUMBER'
-    o 'String'
-    o 'Boolean'
+    'Number'
+    'String'
+    'Boolean'
   ]
 
   Number: [
-    o 'NUMBER'
+    [ 'NUMBER',    -> Number($1) ]
   ]
 
   Boolean: [
-    o 'BOOLEAN'
+    [ 'BOOLEAN',   -> Boolean($1) ]
   ]
 
   String: [
-    o 'STRING'
+    [ 'STRING',    -> String($1) ]
   ]
 
   Literal: [
-    o 'LITERAL'
+    [ 'LITERAL',   -> $1 ]
   ]
 
 
-tokens = []
 operators = [
   ['left', 'Op']
   ['left', 'OPERATOR']
   ['left', 'CONDITIONAL']
 ]
 
+tokens = {}
+
+for name, alternatives of grammar
+  grammar[name] = for alt, index in alternatives
+    if alt instanceof Array
+      [ pattern, action ] = alt
+    else
+      pattern = alt
+      action = null
+    for token in pattern.split /\s+/
+      tokens[token] = token unless grammar[token]
+    if action?
+      action = if m = unwrap.exec action then m[1] else "(#{action}())"
+      action = "$$ = #{action};"
+    else
+      num = pattern.split(/\s/).length
+      args = ('$'+i for i in [1..num]).join(', ')
+      action = "$$ = new yy.Node({ type: '#{name}', childNodes: [ #{args} ] });"
+    action = "return #{action}" if name is 'Root'
+    [ pattern, action ]
+
+###
 for name, alternatives of grammar
   grammar[name] = for alt in alternatives
     for token in alt[0].split ' '
-      tokens.push token unless grammar[token]
+      tokens[token] = token unless grammar[token]
     alt[1] = "return #{alt[1]}" if name is 'Root'
     alt
+###
 
 exports.parser = new Parser
 #  lex         : lex
-  tokens      : tokens.join ' '
+  tokens      : (name for name of tokens).join ' '
   bnf         : grammar
   operators   : operators.reverse()
   startSymbol : 'Root'
