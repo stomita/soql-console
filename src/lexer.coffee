@@ -1,5 +1,6 @@
-##
-##
+###
+# lexer.coffee
+###
 class Lexer
   constructor: (soql, opts={}) ->
     @soql = soql
