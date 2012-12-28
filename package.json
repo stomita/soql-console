@@ -9,7 +9,7 @@
     "node": "*"
   },
   "scripts": {
-    "test": "mocha --compilers coffee:coffee-script -R spec"
+    "test": "cake test"
   },
   "dependencies": {
     "coffee-script":"1.3.x",
