@@ -3,6 +3,9 @@ fs     = require 'fs'
 rjs    = require 'requirejs'
 {sync:glob} = require 'glob'
 
+option '-t', '--target [TARGET]',  'specify test target'
+
+
 task 'build', 'Rebuild the Jison parser', ->
   console.log "building parser..."
   parser = require('./src/grammar').parser
@@ -15,7 +18,7 @@ task 'build', 'Rebuild the Jison parser', ->
     console.log "building amd src..."
     exec "r.js -convert build public/js"
 
-task 'test', 'Test', ->
+task 'test', 'Test', (options) ->
   dataDir = './test/stub/data/'
   files = fs.readdirSync dataDir
   for file in files when file.match(/\.json$/)
@@ -23,7 +26,9 @@ task 'test', 'Test', ->
     data = fs.readFileSync dataDir + file, 'utf-8'
     fname = file.replace(/\.json$/, '')
     fs.writeFileSync "#{dataDir}/#{fname}.js", "module.exports=#{data}", "utf-8"
-  mocha = spawn "mocha", [ "--compilers", "coffee:coffee-script", "-R", "spec", "--colors" ]
+  args = [ "--compilers", "coffee:coffee-script", "-R", "spec", "--colors" ]
+  args.push "./test/#{options.target}_test.coffee" if options.target?
+  mocha = spawn "mocha", args
   mocha.stdout.pipe(process.stdout, end: false)
   mocha.stderr.pipe(process.stderr, end: false)
   mocha.on 'exit', -> process.exit()

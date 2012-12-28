@@ -35,7 +35,8 @@ complete = (text, caret, callback) ->
       getFieldNames(r, cb)
     else
       cb([])
-  , (rets) ->
+  ,
+  (rets) ->
     candidates = []
     candidates.push.apply(candidates, ret) for ret in rets
     callback(candidates, target[3])
@@ -91,38 +92,167 @@ getExpectedToken = (names, actual) ->
 ###
 findCaretPosition = (tokens, caret) ->
   for i in [0...tokens.length - 1]
+    ttag = tokens[i][0]
     tpos = tokens[i][3]
     tlen = tokens[i][1].length
     ntpos = tokens[i+1][3]
     if ntpos >= caret
-      ret = { pos: i, inserting: caret > tpos + tlen }
-      return ret
+      inserting =
+        caret > tpos + tlen ||
+        (caret == tpos + tlen && /^(DOT|SEPARATOR)$/.test(ttag))
+      return { pos: i, inserting: inserting }
   { pos: tokens.length, inserting: true }
 
 ###
 ###
 getObjectTypes = (node, callback) ->
-  callback([
-    { type: 'object', value: 'Account' }
-    { type: 'object', value: 'Contact' }
-    { type: 'object', value: 'Contract' }
-  ])
+  handleError = (err) ->
+    console.error(err)
+    callback(null)
+
+  selectTypeRegexp = /^(SelectQuery|InnerSelect)$/
+  selectNode = node.findParent(selectTypeRegexp)
+  return handleError(message: "Not inside of select node.") unless selectNode
+  outerSelectNode = selectNode.findParent(selectTypeRegexp)
+  # cannot be nested over 2 level
+  if outerSelectNode?.findParent(selectTypeRegexp)
+    return handleError(message: "Nested more than 2 levels")
+
+  if outerSelectNode # inner select query
+    objectType = outerSelectNode.find('ObjectType')?.value
+    getConnection().describeSObject objectType, (err, res) ->
+      return handleError(err) if err
+      candidates =
+        for r in res.childRelationships ? [] when r.relationshipName?
+            type: 'childRelationship', value: r.relationshipName
+      callback(candidates)
+  else # root query
+    getConnection().describeGlobal (err, res) ->
+      return handleError(err) if err
+      candidates =
+        for s in res.sobjects when String(s.queryable) == "true"
+          type: 'object', value: s.name
+      callback(candidates)
+
 
 ###
 ###
 getFieldNames = (node, callback) ->
-  callback([
-    { type: 'field', fieldType: 'id', value: 'Id' }
-    { type: 'field', fieldType: 'text', value: 'Name' }
-    { type: 'field', fieldType: 'id', value: 'AccountId' }
-    { type: 'field', fieldType: 'reference', value: 'Account' }
-  ])
+
+  handleError = (err) ->
+    console.error(err)
+    callback([])
+
+  handleFields = (fields) ->
+    candidates = []
+    for field in fields
+      if !(inWhereClause && String(field.filterable) == "false") &&
+         !(inOrderClause && String(field.sortable) == "false") &&
+         !(inGroupClause && String(field.groupable) == "false")
+
+        if field.type == 'reference'
+          candidates.push
+            type: 'field'
+            fieldType: 'id'
+            label: field.label
+            value: field.name
+          candidates.push
+            type: 'field'
+            fieldType: 'reference'
+            label: field.label.replace(/\s+id$/ig, '')
+            value: field.relationshipName
+        else
+          candidates.push
+            type: 'field'
+            fieldType: field.type
+            label: field.label
+            value: field.name
+    callback(candidates)
+
+  parentFields = []
+  n = node
+  parentFields.unshift(n.value) while n = n.findPrevious('FieldName', 'SelectField')
+
+  selectTypeRegexp = /^(SelectQuery|InnerSelect)$/
+  selectNode = node.findParent(selectTypeRegexp)
+  return handleError( message: "Not inside of select node." ) unless selectNode
+  outerSelectNode = selectNode.findParent(selectTypeRegexp)
+  # cannot be nested over 2 level
+  if outerSelectNode?.findParent(selectTypeRegexp)
+    return handleError( message: "Nested more than 2 levels" )
+
+  inWhereClause = node.findParent("WhereClause", selectTypeRegexp)?
+  inOrderClause = node.findParent("OrderClause", selectTypeRegexp)?
+  inGroupClause = node.findParent("GroupClause", selectTypeRegexp)?
+
+  if outerSelectNode # inner select query
+    objectType = outerSelectNode.find('ObjectType')?.value
+    relationshipName = selectNode.find('ObjectType')?.value
+
+    console.log "objectType=#{objectType}, relationshipName=#{relationshipName}"
+
+    describeNestedObject objectType, relationshipName, (err, so) ->
+      return handleError(err) if err
+      describeFields so.name, parentFields, (err, fields) ->
+        return handleError(err) if err
+        handleFields(fields)
+  else # root query
+    objectType = selectNode.find('ObjectType')?.value
+    describeFields objectType, parentFields, (err, fields) ->
+      return handleError(err) if err
+      handleFields(fields)
+
+
+###
+###
+describeNestedObject = (objectType, relationshipName, callback) ->
+  console.log "describeNestedObject ( #{objectType}, [ #{parentFields.join(',')} ] )"
+  getConnection().describeSObject objectType, (err, res) ->
+    return callback(err) if err
+    childObjectType = null
+    for r in res.childRelationships ? []
+      if r.relationshipName == relationshipName
+        childObjectType = r.childSObject
+        break
+    return handleError(err)
+    getConnection().describeSObject childObjectType, (err, res) ->
+      return handleError(err) if err
+
+###
+###
+describeFields = (objectType, parentFields, callback) ->
+  console.log "describeFields ( #{objectType}, [ #{parentFields.join(',')} ] )"
+  getConnection().describeSObject objectType, (err, res) ->
+    return callback(err) if err
+    if parentFields.length > 0
+      parentField = parentFields[0]
+      parentObjectType = null
+      for field in res.fields
+        if field.relationshipName == parentField
+          refs = field.referenceTo
+          refs = if typeof refs == 'string' then [ refs ] else refs
+          parentObjectType = if refs.length == 1 then refs[0] else 'Name'
+          break
+      if parentObjectType
+        describeFields(parentObjectType, parentFields.slice(1), callback)
+      else
+        callback(message: "No reference field name for '#{parentField}'")
+    else
+      callback(null, res.fields)
+
+###
+###
+getConnection = ->
+  throw new Error("No connection assigned") unless exports.connection
+  exports.connection
 
 ###
 ###
 debugTokens = (tokens) ->
   console.log (token[1]+"("+token[0]+":"+token[3]+")" for token in tokens).join(' ')
 
+
+exports.connection = null
 
 exports.tokenize = tokenize
 exports.parse    = parse
