@@ -23,7 +23,7 @@ complete = (text, caret, callback) ->
   tokens = tokenize(text)
   { pos, inserting } = findCaretPosition(tokens, caret)
   tokens.splice(++pos, 0, [ "LITERAL" , "", 1, caret ]) if inserting
-  debugTokens tokens
+  # debugTokens tokens
   target = tokens[pos]
   results = parseTokens(tokens, pos)
   asyncMap results, (r, cb) ->
@@ -47,21 +47,18 @@ parseTokens = (tokens, pos) ->
 
   tryParse = (tokens, pos, depth=0) ->
     return [] if depth > 10
-    debugTokens(tokens)
+    # debugTokens(tokens)
     try
       tree = parser.parse(tokens)
     catch e
       epos = e.pos - 1
-      console.log e.message, "err pos=#{epos}, tgt pos=#{pos}"
       return [] unless e.expected?
       expected = (name.substring(1, name.length-1) for name in e.expected)
-      console.log "expected", expected
       if epos == pos
         candidates = []
         for name in expected
           words = lexer.dictionary[name]
           candidates.push.apply(candidates, words) if words
-        console.log candidates
       else
         etoken = getExpectedToken(expected, tokens[epos])
         tokens = Array.prototype.slice.call(tokens)
