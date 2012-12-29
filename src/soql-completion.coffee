@@ -5,10 +5,9 @@ lexer  = require "./lexer"
 parser = require "./parser"
 Node   = require "./node"
 
-tokenize = (soql) -> lexer.tokenize(soql)
 
-parse = (tokens) -> parser.parse(tokens)
-
+###
+###
 asyncMap = (arr, asyncFn, callback) ->
   cnt = arr.length
   rets = new Array(arr.length)
@@ -19,13 +18,14 @@ asyncMap = (arr, asyncFn, callback) ->
       cnt--
       return callback(rets) if cnt==0
 
+###
+###
 complete = (text, caret, callback) ->
   tokens = tokenize(text)
   { pos, inserting } = findCaretPosition(tokens, caret)
   if inserting
     pos++ if pos < tokens.length - 1
     tokens.splice(pos, 0, [ "LITERAL" , "", tokens[pos][3], caret ])
-  console.log tokens
   # debugTokens tokens
   target = tokens[pos]
   results = parseTokens(tokens, pos)
@@ -209,7 +209,6 @@ getFieldNames = (node, callback) ->
 ###
 ###
 describeNestedObject = (objectType, relationshipName, callback) ->
-  console.log "describeNestedObject ( #{objectType}, #{relationshipName} )"
   getConnection().describeSObject objectType, (err, res) ->
     return callback(err) if err
     childObjectType = null
@@ -217,7 +216,6 @@ describeNestedObject = (objectType, relationshipName, callback) ->
       if r.relationshipName == relationshipName
         childObjectType = r.childSObject
         break
-    console.log "cot", childObjectType
     getConnection().describeSObject childObjectType, (err, res) ->
       return callback(err) if err
       callback(null, res)
@@ -225,7 +223,6 @@ describeNestedObject = (objectType, relationshipName, callback) ->
 ###
 ###
 describeFields = (objectType, parentFields, callback) ->
-  console.log "describeFields ( #{objectType}, [ #{parentFields.join(',')} ] )"
   getConnection().describeSObject objectType, (err, res) ->
     return callback(err) if err
     if parentFields.length > 0
