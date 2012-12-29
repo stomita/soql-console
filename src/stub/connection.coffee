@@ -7,7 +7,7 @@ sobjects = {}
 for sobject in metadata.sobjects
   sobjects[sobject.name.toUpperCase()] = sobject
 
-exports.delay = 400
+exports.delay = 10 # delay for callback response in msec
 
 exports.describeGlobal = (callback) ->
   setTimeout ->

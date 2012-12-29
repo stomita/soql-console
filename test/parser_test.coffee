@@ -4,7 +4,8 @@
 expect = require 'expect.js'
 
 Node   = require '../src/node'
-SoqlCompletion = require '../src/soql-completion'
+lexer  = require '../src/lexer'
+parser = require '../src/parser'
 
 ###
 ###
@@ -25,9 +26,8 @@ describe "parsing soql", ->
   leafs = null
 
   before ->
-    tokens = SoqlCompletion.tokenize(soql)
-    tree = SoqlCompletion.parse(tokens)
-    # tree.print()
+    tokens = lexer.tokenize(soql)
+    tree = parser.parse(tokens)
 
   ###
   ###

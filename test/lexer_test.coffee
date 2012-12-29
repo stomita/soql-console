@@ -4,7 +4,7 @@
 expect = require 'expect.js'
 
 Node   = require '../src/node'
-SoqlCompletion = require '../src/soql-completion'
+lexer  = require '../src/lexer'
 
 ###
 ###
@@ -17,7 +17,7 @@ describe "tokenizing SOQL input", ->
   ###
   ###
   before ->
-    tokens = SoqlCompletion.tokenize(soql)
+    tokens = lexer.tokenize(soql)
 
   ###
   ###
@@ -61,7 +61,7 @@ describe "tokenizing invalid input in syntax", ->
   ###
   ###
   before ->
-    tokens = SoqlCompletion.tokenize(soql)
+    tokens = lexer.tokenize(soql)
 
   ###
   ###
@@ -87,6 +87,6 @@ describe 'tokenizating invalid input in lex', ->
   ###
   it "should fail tokenizing string", ->
     expect ->
-      SoqlCompletion.tokenize(soql)
+      lexer.tokenize(soql)
     .to.throwException()
 

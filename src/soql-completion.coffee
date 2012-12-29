@@ -21,7 +21,7 @@ asyncMap = (arr, asyncFn, callback) ->
 ###
 ###
 complete = (text, caret, callback) ->
-  tokens = tokenize(text)
+  tokens = lexer.tokenize(text)
   { pos, inserting } = findCaretPosition(tokens, caret)
   if inserting
     pos++ if pos < tokens.length - 1
@@ -255,7 +255,5 @@ debugTokens = (tokens) ->
 
 exports.connection = null
 
-exports.tokenize = tokenize
-exports.parse    = parse
 exports.complete = complete
 

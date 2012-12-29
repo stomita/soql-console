@@ -12,7 +12,7 @@ describe "completing", ->
   ###
   ###
   before ->
-    SoqlCompletion.connection = require './stub/connection'
+    SoqlCompletion.connection = require '../src/stub/connection'
 
   ###
   ###
