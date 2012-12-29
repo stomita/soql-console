@@ -3,8 +3,8 @@
 ###
 expect = require 'expect.js'
 
-Node   = require '../build/node'
-SoqlCompletion = require '../build/soql-completion'
+Node   = require '../src/node'
+SoqlCompletion = require '../src/soql-completion'
 
 ###
 ###

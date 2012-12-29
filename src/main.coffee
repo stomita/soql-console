@@ -8,19 +8,76 @@ define "path", {}
 define "file", {}
 define "system", {}
 
-require [ './lexer', './parser' ], (lexer, parser) ->
+require.config
+
+require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connection) ->
+
+  SoqlCompletion.connection = connection
+  SoqlCompletion.connection.delay = 1 # 1msec
+
+  ###
+  ###
+  completing = false
+  pivot = -1
 
   ###
   ###
   $('#soql').keydown (e) ->
-    if e.ctrlKey && e.keyCode == 32 # Ctrl + Space
-      e.stopPropagation();
-      e.preventDefault();
-      startCompletion()
-    else if completing && e.keyCode == 27 # ESC
-      endCompletion()
+    if completing
+      propagate = false
+      switch e.keyCode
+        when 9 # tab
+          if e.shiftKey
+            moveToPrevCandidate()
+          else
+            moveToNextCandidate()
+        when 13 # return
+          word = getSelectedCandidate()
+          execCompletion(word) if word
+        when 27 # ESC
+          endCompletion()
+        when 32 # Space
+          if e.ctrlKey # Ctrl + Space
+            if e.shiftKey
+              moveToPrevCandidate()
+            else
+              moveToNextCandidate()
+          else
+            propagate = true
+        when 38 # up
+          moveToPrevCandidate()
+        when 40 # down
+          moveToNextCandidate()
+        else
+          propagate = true
+      unless propagate
+        e.preventDefault()
+        e.stopPropagation()
+    else
+      if e.ctrlKey && e.keyCode == 32 || # Ctrl + Space
+         e.keyCode == 9 # tab
+        e.stopPropagation()
+        e.preventDefault()
+        startCompletion()
 
-  completing = false
+  $('#soql').keyup (e) ->
+    if completing
+      switch e.keyCode
+        when 9, 13, 27, 38, 40
+          break
+        else
+          caret = getCaret()
+          if caret < pivot
+            endCompletion()
+          else
+            input = $(@).val().substring(pivot, caret)
+            filterCandidates(input)
+
+  $('#soql').click ->
+    endCompletion() if completing
+
+  $('#soql').blur ->
+    endCompletion() if completing
 
   ###
   ###
@@ -28,126 +85,108 @@ require [ './lexer', './parser' ], (lexer, parser) ->
     completing = true
     el = $('#soql')
     text = el.val()
-    caret = getCaret(el.get(0))
-    tokens = lexer.tokenize(text)
-    { pos, inserting } = findCaretPosition(tokens, caret)
-    if inserting
-      pos++
-      tokens.splice(pos, 0, [ "LITERAL" , "", 1, caret ])
-    debugTokens tokens
-    startParse tokens, pos
+    caret = getCaret()
+    SoqlCompletion.complete text, caret, (candidates, index) ->
+      pivot = index
+      input = text.substring(caret, index).toUpperCase()
+      if candidates.length == 0
+        endCompletion()
+      if completing
+        matched = []
+        for c in candidates 
+          matched.push(c) if c.value?.toUpperCase().indexOf(input) == 0
+        if matched.length == 1
+          execCompletion(matched[0].value)
+        else
+          $('#candidates').empty().show()
+          for candidate in candidates
+            $('<li>')
+               .data('value', candidate.value)
+               .data('label', candidate.label)
+               .text(candidate.value)
+               .appendTo($('#candidates'))
+          filterCandidates(input)
 
   ###
   ###
-  processCompletion = (tokens, target, results) ->
-    input = tokens[target][1].toUpperCase()
-    candidates = []
-    for r in results
-      if typeof r == 'string'
-        candidates.push(r)
-      else if r.type == 'ObjectType'
-        candidates.push('Account', 'Contact', 'Opportunity', 'Contract')
-      else if r.type == 'FieldName'
-        candidates.push('Id', 'Name', 'CreatedDate', 'Parent')
-    candidates = (word for word in candidates when word.toUpperCase().indexOf(input.toUpperCase()) == 0)
-    console.log(input, candidates)
-    if candidates.length == 1
-      $('#candidates').empty()
-      execCompletion(tokens, target, candidates[0])
+  filterCandidates = (input) ->
+    input = input.toUpperCase()
+    $('#candidates li').each ->
+      el = $(@)
+      value = el.data('value').toUpperCase()
+      if value.indexOf(input) == 0
+        el.addClass('visible')
+      else
+        el.removeClass('visible')
+    selectFirstCandidate()
+
+  ###
+  ###
+  getSelectedCandidate = ->
+    $('#candidates li.selected').first().data('value')
+
+  ###
+  ###
+  selectFirstCandidate = ->
+    $('#candidates li').removeClass('selected')
+      .filter('.visible').first().addClass('selected')
+
+  ###
+  ###
+  moveToPrevCandidate = ->
+    curr = $('#candidates li.selected')
+    prev = curr.prev('li.visible')
+    if prev.size() == 1
+      curr.removeClass('selected')
+      prev.addClass('selected')
     else
-      $('#candidates').empty().show()
-      for word in candidates
-        $('#candidates').append($('<li>').data('word', word).text(word))
+      selectLastCandidate()
 
-  execCompletion = (tokens, target, word) ->
+  ###
+  ###
+  selectLastCandidate = ->
+    $('#candidates li').removeClass('selected')
+      .filter('.visible').last().addClass('selected')
+
+  ###
+  ###
+  moveToNextCandidate = ->
+    curr = $('#candidates li.selected')
+    next = curr.next('li.visible')
+    if next.size() == 1
+      curr.removeClass('selected')
+      next.addClass('selected')
+    else
+      if $('#candidates li.visible').size() == 1
+        word = getSelectedCandidate()
+        execCompletion(word)
+      else
+        selectFirstCandidate()
+
+  ###
+  ###
+  execCompletion = (word) ->
     el = $('#soql')
     text = el.val()
-    caret = getCaret(el.get(0))
-    preText = if target >=1 then text.substring(0, tokens[target][3]) else ""
-    postText = text.substring(preText.length + tokens[target][1].length)
+    preText = text.substring(0, pivot)
+    caret = getCaret()
+    postText = text.substring(caret)
     word += if postText.length == 0 then " " else ""
     el.val(preText + word + postText)
-    el.focus();
-    setCaret(el.get(0), caret + word.length)
+    setCaret(pivot + word.length)
+    endCompletion()
 
   ###
   ###
   endCompletion = ->
     completing = false
+    pivot = -1
     $('#candidates').hide()
 
   ###
   ###
-  findCaretPosition = (tokens, caret) ->
-    for i in [0...tokens.length - 1]
-      tpos = tokens[i][3]
-      tlen = tokens[i][1].length
-      ntpos = tokens[i+1][3]
-#      console.log("tpos=#{tpos},tlen=#{tlen},ntpos=#{ntpos},caret=#{caret}")
-      if ntpos >= caret
-        ret = { pos: i, inserting: caret > tpos + tlen }
-        return ret
-    { pos: tokens.length, inserting: true }
-
-  ###
-  ###
-  startParse = (_tokens, _target) ->
-
-    tryParse = (tokens, target, depth=0) ->
-      return [] if depth > 10
-      debugTokens(tokens)
-      try
-        tree = parser.parse(tokens)
-        tree.print()
-        stokens = tree.flatten()
-        console.log(stokens)
-        return [ stokens[target] ]
-      catch e
-        epos = e.pos - 1
-        console.log e.message, "err pos=#{epos}, target=#{target}"
-        return [] unless e.expected?
-        expected = (name.substring(1, name.length-1) for name in e.expected)
-        console.log "expected", expected
-        if epos == target
-          candidates = []
-          for name in expected
-            words = lexer.dictionary[name]
-            candidates.push.apply(candidates, words) if words
-          console.log candidates
-          return candidates
-        else
-          etoken = getExpectedToken(expected, tokens[epos])
-          tokens = Array.prototype.slice.call(tokens)
-          tokens.splice(epos, 0, etoken)
-          inc = if epos < target then 1 else 0
-          return tryParse(tokens, target+inc, depth+1)
-
-    candidates = tryParse(_tokens, _target)
-    processCompletion(_tokens, _target, candidates)
-
-  ###
-  ###
-  getExpectedToken = (names, actual) ->
-    p = lexer.priority
-    names = names.sort (n1, n2) ->
-      p1 = p[n1] ? 100
-      p2 = p[n2] ? 100
-      if p1 > p2 then 1 else if p1 < p2 then -1 else 0
-    for name in names
-      words = lexer.dictionary[name] || lexer.examples[name]
-      if words && words.length > 0
-        return [ name, words[0], actual[2], actual[3] ]
-    null
-
-  ###
-  ###
-  debugTokens = (tokens) ->
-    console.log (token[1]+"("+token[0]+":"+token[3]+")" for token in tokens).join(' ')
-
-
-  ###
-  ###
-  getCaret = (el) ->
+  getCaret = ->
+    el = $('#soql').get(0)
     if el.selectionStart
       return el.selectionStart; 
     else if document.selection
@@ -164,7 +203,8 @@ require [ './lexer', './parser' ], (lexer, parser) ->
 
   ###
   ###
-  setCaret = (el, pos) ->
+  setCaret = (pos) ->
+    el = $('#soql').get(0)
     el.selectionStart = el.selectionEnd = pos 
 
 

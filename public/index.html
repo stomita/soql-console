@@ -4,11 +4,16 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
     <script src="./lib/requirejs/require.js" data-main="./js/main"></script>
     <style>
+body {
+  font-size: 12px;
+  font-family: monospace;
+}
 #soql {
   width: 500px;
   height: 150px;
 }
-#output {
+#candidates {
+  display: none;
   margin: 0px;
   padding: 5px;
   width: 500px;
@@ -16,12 +21,20 @@
   border: 2px dotted blue;
   overflow: auto;
 }
+#candidates li {
+  display: none;
+}
+#candidates li.visible {
+  display: block;
+}
+#candidates li.selected {
+  background-color: #aaf;
+}
     </style>
   </head>
 
   <body>
     <textarea id="soql"></textarea>
     <ul id="candidates"></ul>
-    <div id="output"></div>
   </body>
 </html>

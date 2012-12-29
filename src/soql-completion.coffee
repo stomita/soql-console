@@ -22,7 +22,10 @@ asyncMap = (arr, asyncFn, callback) ->
 complete = (text, caret, callback) ->
   tokens = tokenize(text)
   { pos, inserting } = findCaretPosition(tokens, caret)
-  tokens.splice(++pos, 0, [ "LITERAL" , "", 1, caret ]) if inserting
+  if inserting
+    pos++ if pos < tokens.length - 1
+    tokens.splice(pos, 0, [ "LITERAL" , "", tokens[pos][3], caret ])
+  console.log tokens
   # debugTokens tokens
   target = tokens[pos]
   results = parseTokens(tokens, pos)
@@ -39,6 +42,8 @@ complete = (text, caret, callback) ->
   (rets) ->
     candidates = []
     candidates.push.apply(candidates, ret) for ret in rets
+    candidates = candidates.sort (c1, c2) ->
+      if c1.value > c2.value then 1 else -1
     callback(candidates, target[3])
 
 
@@ -101,7 +106,7 @@ findCaretPosition = (tokens, caret) ->
         caret > tpos + tlen ||
         (caret == tpos + tlen && /^(DOT|SEPARATOR)$/.test(ttag))
       return { pos: i, inserting: inserting }
-  { pos: tokens.length, inserting: true }
+  { pos: tokens.length-1, inserting: true }
 
 ###
 ###
@@ -156,11 +161,12 @@ getFieldNames = (node, callback) ->
             fieldType: 'id'
             label: field.label
             value: field.name
-          candidates.push
-            type: 'field'
-            fieldType: 'reference'
-            label: field.label.replace(/\s+id$/ig, '')
-            value: field.relationshipName
+          if field.relationshipName
+            candidates.push
+              type: 'field'
+              fieldType: 'reference'
+              label: field.label.replace(/\s+id$/ig, '')
+              value: field.relationshipName
         else
           candidates.push
             type: 'field'
@@ -188,9 +194,6 @@ getFieldNames = (node, callback) ->
   if outerSelectNode # inner select query
     objectType = outerSelectNode.find('ObjectType')?.value
     relationshipName = selectNode.find('ObjectType')?.value
-
-    console.log "objectType=#{objectType}, relationshipName=#{relationshipName}"
-
     describeNestedObject objectType, relationshipName, (err, so) ->
       return handleError(err) if err
       describeFields so.name, parentFields, (err, fields) ->
@@ -206,7 +209,7 @@ getFieldNames = (node, callback) ->
 ###
 ###
 describeNestedObject = (objectType, relationshipName, callback) ->
-  console.log "describeNestedObject ( #{objectType}, [ #{parentFields.join(',')} ] )"
+  console.log "describeNestedObject ( #{objectType}, #{relationshipName} )"
   getConnection().describeSObject objectType, (err, res) ->
     return callback(err) if err
     childObjectType = null
@@ -214,9 +217,10 @@ describeNestedObject = (objectType, relationshipName, callback) ->
       if r.relationshipName == relationshipName
         childObjectType = r.childSObject
         break
-    return handleError(err)
+    console.log "cot", childObjectType
     getConnection().describeSObject childObjectType, (err, res) ->
-      return handleError(err) if err
+      return callback(err) if err
+      callback(null, res)
 
 ###
 ###

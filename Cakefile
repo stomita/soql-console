@@ -9,14 +9,18 @@ option '-t', '--target [TARGET]',  'specify test target'
 task 'build', 'Rebuild the Jison parser', ->
   console.log "building parser..."
   parser = require('./src/grammar').parser
-  fs.writeFileSync './build/compiled_parser.js', parser.generate()
+  fs.writeFileSync './src/compiled_parser.js', parser.generate()
   console.log "building js files..."
-  coffee = spawn "coffee", [ "-o", "build", "-c" ].concat(glob("./src/*.coffee"))
+  args = [ "-c" ]
+  args = args.concat(glob("./src/**/*.coffee"))
+  args = args.concat(glob("./test/**/*.coffee"))
+  coffee = spawn "coffee", args
   coffee.stdout.pipe(process.stdout, end: false)
   coffee.stderr.pipe(process.stderr, end: false)
   coffee.on 'exit', ->
     console.log "building amd src..."
-    exec "r.js -convert build public/js"
+    exec "r.js -convert src public/js"
+    exec "r.js -convert test public/js"
 
 task 'test', 'Test', (options) ->
   dataDir = './test/stub/data/'
@@ -26,6 +30,7 @@ task 'test', 'Test', (options) ->
     data = fs.readFileSync dataDir + file, 'utf-8'
     fname = file.replace(/\.json$/, '')
     fs.writeFileSync "#{dataDir}/#{fname}.js", "module.exports=#{data}", "utf-8"
+
   args = [ "--compilers", "coffee:coffee-script", "-R", "spec", "--colors" ]
   args.push "./test/#{options.target}_test.coffee" if options.target?
   mocha = spawn "mocha", args
