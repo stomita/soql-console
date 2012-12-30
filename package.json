@@ -6,6 +6,7 @@
     "node": "0.8"
   },
   "scripts": {
+    "prestart": "cake build",
     "test": "cake test"
   },
   "dependencies": {
