@@ -1,1 +1,1 @@
-web: coffee lib/app.coffee
+web: npm start
