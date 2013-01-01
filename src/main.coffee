@@ -10,10 +10,15 @@ define "system", {}
 
 require.config
 
-require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connection) ->
+require [ './soql-completion', './stub/connection', './caret' ], (compl, connection) ->
+  $ ->
+    compl.connection = connection
+    compl.connection.delay = 1 # 1msec
+    init(compl)
 
-  SoqlCompletion.connection = connection
-  SoqlCompletion.connection.delay = 1 # 1msec
+###
+###
+init = (compl) ->
 
   ###
   ###
@@ -22,6 +27,8 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
 
   ###
   ###
+  $('#queryBtn').click -> startQuery()
+
   $('#soql').keydown (e) ->
     if completing
       propagate = false
@@ -59,6 +66,8 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
         e.stopPropagation()
         e.preventDefault()
         startCompletion()
+      else if e.ctrlKey && e.keyCode == 13 # Ctrl + Return
+        startQuery()
 
   $('#soql').keyup (e) ->
     if completing
@@ -66,11 +75,12 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
         when 9, 13, 27, 38, 40
           break
         else
-          caret = getCaret()
-          if caret < pivot
+          cpos = $('#soql').caretPosition()
+          ch = $('#soql').val().charAt(cpos-1)
+          if cpos < pivot || /[\s+\.\,]/.test(ch)
             endCompletion()
           else
-            input = $(@).val().substring(pivot, caret)
+            input = $(@).val().substring(pivot, cpos)
             filterCandidates(input)
 
   $('#soql').click ->
@@ -79,16 +89,19 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
   $('#soql').blur ->
     endCompletion() if completing
 
+  $('#soql').focus()
+
+
   ###
   ###
   startCompletion = ->
     completing = true
     el = $('#soql')
     text = el.val()
-    caret = getCaret()
-    SoqlCompletion.complete text, caret, (candidates, index) ->
+    cpos = el.caretPosition()
+    compl.complete text, cpos, (candidates, index) ->
       pivot = index
-      input = text.substring(caret, index).toUpperCase()
+      input = text.substring(cpos, index).toUpperCase()
       if candidates.length == 0
         endCompletion()
       if completing
@@ -98,12 +111,17 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
         if matched.length == 1
           execCompletion(matched[0].value)
         else
-          $('#candidates').empty().show()
+          p = el.charPosition(index)
+          $('#candidates')
+            .empty()
+            .css(left: p.left, top: p.top + 28)
+            .scrollTop(0)
+            .show()
           for candidate in candidates
             $('<li>')
                .data('value', candidate.value)
                .data('label', candidate.label)
-               .text(candidate.value)
+               .append($('<a>').text(candidate.value))
                .appendTo($('#candidates'))
           filterCandidates(input)
 
@@ -118,50 +136,75 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
         el.addClass('visible')
       else
         el.removeClass('visible')
+    len = $('#candidates li.visible').size()
+    console.log len
+    if len > 0
+      $('#candidates').show()
+    else
+      $('#candidates').hide()
     selectFirstCandidate()
 
   ###
   ###
   getSelectedCandidate = ->
-    $('#candidates li.selected').first().data('value')
+    $('#candidates li.active').first().data('value')
 
   ###
   ###
   selectFirstCandidate = ->
-    $('#candidates li').removeClass('selected')
-      .filter('.visible').first().addClass('selected')
+    $('#candidates li').removeClass('active')
+      .filter('.visible').first().addClass('active')
 
   ###
   ###
   moveToPrevCandidate = ->
-    curr = $('#candidates li.selected')
+    curr = $('#candidates li.active')
     prev = curr.prev('li.visible')
     if prev.size() == 1
-      curr.removeClass('selected')
-      prev.addClass('selected')
+      curr.removeClass('active')
+      prev.addClass('active')
     else
       selectLastCandidate()
+    adjustCandidateScroll()
 
   ###
   ###
   selectLastCandidate = ->
-    $('#candidates li').removeClass('selected')
-      .filter('.visible').last().addClass('selected')
+    $('#candidates li').removeClass('active')
+      .filter('.visible').last().addClass('active')
 
   ###
   ###
   moveToNextCandidate = ->
-    curr = $('#candidates li.selected')
+    curr = $('#candidates li.active')
     next = curr.next('li.visible')
     if next.size() == 1
-      curr.removeClass('selected')
-      next.addClass('selected')
+      curr.removeClass('active')
+      next.addClass('active')
     else
       if $('#candidates li.visible').size() == 1
         word = getSelectedCandidate()
         execCompletion(word)
       else
         selectFirstCandidate()
+    adjustCandidateScroll()
+
+  ###
+  ###
+  adjustCandidateScroll = ->
+    el = $('#candidates')
+    top = el.position().top
+    height = el.height()
+    selected = $('#candidates li.active')
+    if selected.size() > 0
+      first = $('#candidates li.visible').first()
+      ft = first.position().top
+      st = selected.position().top
+      sb = st + selected.height()
+      if st < 0
+        el.scrollTop(st - ft)
+      else if sb > height
+        el.scrollTop(sb - ft - height)
 
   ###
   ###
@@ -169,11 +212,11 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
     el = $('#soql')
     text = el.val()
     preText = text.substring(0, pivot)
-    caret = getCaret()
-    postText = text.substring(caret)
+    cpos = el.caretPosition()
+    postText = text.substring(cpos)
     word += if postText.length == 0 then " " else ""
     el.val(preText + word + postText)
-    setCaret(pivot + word.length)
+    el.caretPosition(pivot + word.length)
     endCompletion()
 
   ###
@@ -183,28 +226,16 @@ require [ './soql-completion', './stub/connection' ], (SoqlCompletion, connectio
     pivot = -1
     $('#candidates').hide()
 
-  ###
-  ###
-  getCaret = ->
-    el = $('#soql').get(0)
-    if el.selectionStart
-      return el.selectionStart; 
-    else if document.selection
-      el.focus()
-      r = document.selection.createRange()
-      return 0 if r == null
-
-      re = el.createTextRange()
-      rc = re.duplicate()
-      re.moveToBookmark(r.getBookmark())
-      rc.setEndPoint('EndToStart', re) 
-      return rc.text.length 
-    0
 
   ###
   ###
-  setCaret = (pos) ->
-    el = $('#soql').get(0)
-    el.selectionStart = el.selectionEnd = pos 
+  startQuery = ->
+    alert "not implemented yet"
+    ###
+    soql = $('#soql').val()
+    compl.connection.query soql,
+      onSuccess: (res) ->
+      onFailure: (err) ->
+    ###
 
 

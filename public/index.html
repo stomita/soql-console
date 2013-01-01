@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <meta charset="UTF-8">
+    <link href="./lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="./lib/bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" media="screen">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
     <script src="./lib/requirejs/require.js" data-main="./js/main"></script>
+    <script src="./lib/bootstrap/js/bootstrap.min.js"></script>
     <style>
-body {
-  font-size: 12px;
-  font-family: monospace;
+@media screen and (min-width: 980px) {
+  #console {
+    margin-top: 60px;
+  }
 }
 #soql {
-  width: 500px;
-  height: 150px;
+  font-size: 18px;
+  font-family: Osaka-Mono !important;
+  font-weight: bold;
+  width: 100%;
+  height: 100px;
 }
 #candidates {
   display: none;
   margin: 0px;
   padding: 5px;
-  width: 500px;
-  height: 150px;
-  border: 2px dotted blue;
+  max-height: 150px;
   overflow: auto;
 }
 #candidates li {
@@ -27,14 +33,83 @@ body {
 #candidates li.visible {
   display: block;
 }
-#candidates li.selected {
-  background-color: #aaf;
+#candidates li.active a {
+  color: white;
 }
     </style>
   </head>
 
   <body>
-    <textarea id="soql"></textarea>
-    <ul id="candidates"></ul>
+
+    <!-- navigation bar -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">SOQL console</a>
+          <ul id="global-menu" class="nav">
+            <li>
+              <a id="setting-menu" role="button" data-toggle="modal" href="#api-select-dialog">Login</a>
+            </li>
+            <li>
+              <a id="setting-menu" role="button" data-toggle="modal" href="#setting-dialog">Setting</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- main contents -->
+    <div class="container">
+      <!--
+      <div id="top-message">
+        <div class="hero-unit clearfix">
+          <div class="text">
+            <h2>Intelligent Console for Force.com API Developers</h2>
+            <p></p>
+            <p>
+              <a class="btn btn-primary btn-large" 
+                 data-toggle="modal"
+                 href="#api-select-dialog">Login with Salesforce</a>
+            </p>
+          </div>
+        </div>
+      </div>
+      -->
+      <div id="console">
+        <textarea id="soql"></textarea>
+        <button class="btn btn-primary" id="queryBtn">Query</button>
+        <ul id="candidates" class="dropdown-menu"></ul>
+      </div>
+
+    </div>
+
+    <!-- modal dialogs -->
+
+    <!-- Api Selection -->
+    <div id="api-select-dialog" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>Select Connecting Instance Type</h3>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+      </div>
+    </div>
+
+    <!-- Settign Dialog -->
+    <div id="setting-dialog" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>Select Connecting Instance Type</h3>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+      </div>
+    </div>
+
   </body>
 </html>
