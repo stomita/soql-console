@@ -53,14 +53,22 @@ getCharPosition = (el, index) ->
     "font-color": "red"
     "line-height": el.css('line-height')
   )
-  preText = $('<span>').text(text.substring(0, index)).appendTo(shadow)
-  postText = $('<span>').text(text.substring(index) || '_').appendTo(shadow)
+  preText = $('<span>').html(htmlesc(text.substring(0, index))).appendTo(shadow)
+  postText = $('<span>').html(htmlesc(text.substring(index) || '_')).appendTo(shadow)
   charPos = postText.position()
   basePos = el.position()
   {
     left: basePos.left + charPos.left
     top: basePos.top + charPos.top
   }
+
+###
+###
+htmlesc = (str) ->
+  console.log str
+  (str || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+             .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+             .replace(/\n/g, '<br>')
 
 
 ###

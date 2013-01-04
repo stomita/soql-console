@@ -20,6 +20,7 @@
     "jison":"0.3.x",
     "mocha": "1.7.x",
     "npm": "1.1.x",
+    "request": "*",
     "requirejs": "2.1.x"
   }
 }
