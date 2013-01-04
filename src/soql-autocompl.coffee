@@ -102,31 +102,50 @@ autocomplete = (textarea, runQuery) ->
     text = textarea.val()
     cpos = textarea.caretPosition()
     SoqlCompl.connection = module.exports.connection
-    SoqlCompl.complete text, cpos, (candidates, index) ->
-      pivot = index
-      input = text.substring(cpos, index).toUpperCase()
-      if candidates.length == 0
-        endCompletion()
-      if completing
-        matched = []
-        for c in candidates 
-          matched.push(c) if c.value?.toUpperCase().indexOf(input) == 0
-        if matched.length == 1
-          execCompletion(matched[0].value)
-        else
-          p = textarea.charPosition(index)
-          complMenu
-            .empty()
-            .css(left: p.left, top: p.top + 28)
-            .scrollTop(0)
-            .show()
-          for candidate in candidates
-            $('<li>')
-               .data('value', candidate.value)
-               .data('label', candidate.label)
-               .append($('<a>').text(candidate.value))
-               .appendTo(complMenu)
-          filterCandidates(input)
+    pivot = SoqlCompl.complete text, cpos, (candidates, pivot) ->
+      setTimeout ->
+        handleCandidates(text, cpos, candidates, pivot)
+      , 10
+    pt = textarea.charPosition(pivot)
+    complMenu.empty()
+      .append($('<li class="loading" style="font-style:italic">Loading...</li>'))
+      .css(left: pt.left, top: pt.top + 28)
+      .scrollTop(0)
+      .show()
+
+  ###
+  ###
+  handleCandidates = (text, cpos, candidates, pivot) ->
+    if candidates.length == 0
+      endCompletion()
+    if completing
+      input = text.substring(pivot, cpos).toUpperCase()
+      matched = []
+      for c in candidates 
+        matched.push(c) if c.value?.toUpperCase().indexOf(input) == 0
+      if matched.length == 1
+        execCompletion(matched[0].value)
+      else
+        complMenu.empty()
+        for c in candidates
+          $('<li>')
+            .data('value', c.value)
+            .data('label', c.label)
+            .append(
+              do ->
+                anchor = $('<a>')
+                if c.fieldType
+                  anchor.append(
+                    $("<span class=\"label field-type field-type-#{c.fieldType}\">").text(c.fieldType))
+                  anchor.append(' ')
+                anchor.append($('<span>').text(c.value))
+                if c.label
+                  anchor.append($('<span class="display-label">').text(" (#{c.label})"))
+                anchor
+            ).appendTo(complMenu)
+        filterCandidates(input)
+
+
 
   ###
   ###

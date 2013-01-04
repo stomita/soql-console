@@ -28,6 +28,7 @@ complete = (text, caret, callback) ->
     tokens.splice(pos, 0, [ "LITERAL" , "", tokens[pos][3], caret ])
   # debugTokens tokens
   target = tokens[pos]
+  pivot = target[3]
   results = parseTokens(tokens, pos)
   asyncMap results, (r, cb) ->
     if typeof r == 'string'
@@ -44,7 +45,8 @@ complete = (text, caret, callback) ->
     candidates.push.apply(candidates, ret) for ret in rets
     candidates = candidates.sort (c1, c2) ->
       if c1.value > c2.value then 1 else -1
-    callback(candidates, target[3])
+    callback(candidates, pivot)
+  pivot
 
 
 ###
@@ -129,14 +131,22 @@ getObjectTypes = (node, callback) ->
       return handleError(err) if err
       candidates =
         for r in res.childRelationships ? [] when r.relationshipName?
-            type: 'childRelationship', value: r.relationshipName
+          {
+            type: 'childRelationship'
+            label: r.relationshipName
+            value: r.relationshipName
+          }
       callback(candidates)
   else # root query
     getConnection().describeGlobal (err, res) ->
       return handleError(err) if err
       candidates =
         for s in res.sobjects when String(s.queryable) == "true"
-          type: 'object', value: s.name
+          {
+            type: 'object'
+            label: s.label
+            value: s.name
+          }
       callback(candidates)
 
 
