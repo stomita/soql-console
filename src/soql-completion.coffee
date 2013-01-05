@@ -22,13 +22,14 @@ asyncMap = (arr, asyncFn, callback) ->
 ###
 complete = (text, caret, callback) ->
   tokens = lexer.tokenize(text)
+  # debugTokens tokens
+
   { pos, inserting } = findCaretPosition(tokens, caret)
   if inserting
     pos++ if pos < tokens.length - 1
     tokens.splice(pos, 0, [ "UNDEFINED" , "", tokens[pos][3], caret ])
   else
     tokens.splice(pos, 1, [ "UNDEFINED" , "", tokens[pos][2], tokens[pos][3] ])
-  # debugTokens tokens
   target = tokens[pos]
   pivot = target[3]
   results = parseTokens(tokens, pos)
@@ -65,7 +66,6 @@ complete = (text, caret, callback) ->
       else if c1.value > c2.value then 1
       else if c1.value < c2.value then -1
       else 0
-    console.log(candidates)
     callback(candidates, pivot)
   pivot
 
@@ -80,7 +80,7 @@ parseTokens = (tokens, pos) ->
       tree = parser.parse(tokens)
     catch e
       epos = e.pos - 1
-      debugTokens(tokens, pos, epos)
+      # debugTokens(tokens, pos, epos)
       return [] unless e.expected?
       expected = (name.substring(1, name.length-1) for name in e.expected)
       actual = tokens[epos]

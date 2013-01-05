@@ -49,8 +49,13 @@ grammar =
 
   SelectField: [
     'Field'
-    'Function LEFT_PAREN FieldList RIGHT_PAREN'
+    'SelectFieldFunction LEFT_PAREN FieldList RIGHT_PAREN'
     'LEFT_PAREN InnerSelect RIGHT_PAREN'
+  ]
+
+  SelectFieldFunction: [
+    'AGGR_FUNCTION'
+    'DATE_FUNCTION'
   ]
 
   Object: [
@@ -70,12 +75,23 @@ grammar =
     'WHERE ConditionExpressionList'
   ]
 
-  LimitClause: [
-    'LIMIT Number'
+  ConditionExpressionList: [
+    'ConditionExpression'
+    'ConditionExpression CONDITIONAL ConditionExpressionList'
+    'LEFT_PAREN ConditionExpressionList RIGHT_PAREN'
   ]
 
-  OffsetClause: [
-    'OFFSET Number'
+  ConditionExpression: [
+    'ConditionField OPERATOR Value'
+  ]
+
+  ConditionField: [
+    'Field'
+    'ConditionFunction LEFT_PAREN FieldList RIGHT_PAREN'
+  ]
+
+  ConditionFunction: [
+    'DATE_FUNCTION'
   ]
 
   OrderClause: [
@@ -100,7 +116,12 @@ grammar =
 
   OrderField: [
     'Field'
-    'Function LEFT_PAREN Field RIGHT_PAREN'
+    'OrderFunction LEFT_PAREN Field RIGHT_PAREN'
+  ]
+
+  OrderFunction: [
+    'AGGR_FUNCTION'
+    'DATE_FUNCTION'
   ]
 
   GroupClause: [
@@ -120,40 +141,43 @@ grammar =
 
   GroupByField: [
     'Field'
-    'Function LEFT_PAREN Field RIGHT_PAREN'
+    'GroupByFunction LEFT_PAREN Field RIGHT_PAREN'
   ]
 
-  Function: [
-    'FUNCTION'
+  GroupByFunction: [
+    'DATE_FUNCTION'
   ]
 
   HavingClause: [
-    'HAVING ConditionExpressionList'
+    'HAVING HavingConditionExpressionList'
   ]
 
-  ConditionExpressionList: [
-    'ConditionExpression'
-    'ConditionExpression CONDITIONAL ConditionExpressionList'
-    'LEFT_PAREN ConditionExpressionList RIGHT_PAREN'
+  HavingConditionExpressionList: [
+    'HavingConditionExpression'
+    'HavingConditionExpression CONDITIONAL HavingConditionExpressionList'
+    'LEFT_PAREN HavingConditionExpressionList RIGHT_PAREN'
   ]
 
-  ConditionExpression: [
-    'ConditionField OPERATOR Value'
+  HavingConditionExpression: [
+    'HavingConditionField OPERATOR Value'
   ]
 
-  ConditionField: [
+  HavingConditionField: [
     'Field'
-    'Function LEFT_PAREN FunctionArgList RIGHT_PAREN'
+    'HavingConditionFunction LEFT_PAREN FieldList RIGHT_PAREN'
   ]
 
-  FunctionArgList: [
-    'FunctionArg'
-    'FunctionArg SEPARATOR FunctionArgList'
+  HavingConditionFunction: [
+    'AGGR_FUNCTION'
+    'DATE_FUNCTION'
   ]
 
-  FunctionArg: [
-    'Field'
-    'Value'
+  LimitClause: [
+    'LIMIT Number'
+  ]
+
+  OffsetClause: [
+    'OFFSET Number'
   ]
 
   FieldList: [
@@ -174,6 +198,7 @@ grammar =
     'Number'
     'String'
     'Boolean'
+    'Date'
   ]
 
   Number: [
@@ -190,6 +215,10 @@ grammar =
 
   Literal: [
     [ 'LITERAL',   -> $1 ]
+  ]
+
+  Date: [
+    'DATE_LITERAL'
   ]
 
 

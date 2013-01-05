@@ -12,13 +12,13 @@ class Lexer
       bytesConsumed =  @keywordToken() or
                        @booleanToken() or
                        @functionToken() or
-                       @windowExtension() or
                        @sortOrderToken() or
                        @seperatorToken() or
                        @operatorToken() or
                        @mathToken() or
                        @dotToken() or
                        @conditionalToken() or
+                       @dateLiteralToken() or
                        @numberToken() or
                        @stringToken() or
                        @parensToken() or
@@ -73,27 +73,25 @@ class Lexer
     @tokenizeFromList('MATH', MATH) or
     @tokenizeFromList('MATH_MULTI', MATH_MULTI)
   conditionalToken: -> @tokenizeFromList('CONDITIONAL', CONDITIONALS)
-  functionToken:    -> @tokenizeFromList('FUNCTION', FUNCTIONS)
+  functionToken:    ->
+    @tokenizeFromList('AGGR_FUNCTION', AGGR_FUNCTIONS)
+    @tokenizeFromList('DATE_FUNCTION', DATE_FUNCTIONS)
   sortOrderToken:   -> @tokenizeFromList('DIRECTION', SORT_ORDERS)
   booleanToken:     -> @tokenizeFromList('BOOLEAN', BOOLEAN)
   seperatorToken:   -> @tokenizeFromRegex('SEPARATOR', SEPARATOR)
   literalToken:     -> @tokenizeFromRegex('LITERAL', LITERAL, 1, 0)
+  dateLiteralToken: ->
+    @tokenizeFromRegex('DATE_LITERAL', DATE_LITERAL) or
+    @tokenizeFromRegex('DATE_LITERAL', RESERVED_DATE_LITERAL)
   numberToken:      -> @tokenizeFromRegex('NUMBER', NUMBER)
   stringToken:      ->
     @tokenizeFromRegex('STRING', STRING, 1, 0) ||
     @tokenizeFromRegex('DBLSTRING', DBLSTRING, 1, 0)
-    
+
     
   parensToken: ->
     @tokenizeFromRegex('LEFT_PAREN', /^\(/,) or
     @tokenizeFromRegex('RIGHT_PAREN', /^\)/,)
-  
-  windowExtension: ->
-    match = (/^\.(win):(length|time)/i).exec(@chunk)
-    return 0 unless match
-    @token('WINDOW', match[1])
-    @token('WINDOW_FUNCTION', match[2])
-    match[0].length
   
   whitespaceToken: ->
     return 0 unless match = WHITESPACE.exec(@chunk)
@@ -107,10 +105,10 @@ class Lexer
     str.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
   
 KEYWORDS        = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'NULLS FIRST', 'NULLS LAST']
-FUNCTIONS       = ['AVG', 'COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'SUM']
-DATE_FUNCTIONS  = []
+AGGR_FUNCTIONS  = ['AVG', 'COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'SUM']
+DATE_FUNCTIONS  = ['CALENDAR_MONTH', 'CALENDAR_QUARTER', 'CALENDAR_YEAR', 'DAY_IN_MONTH', 'DAY_IN_WEEK', 'DAY_IN_YEAR', 'DAY_ONLY', 'FISCAL_MONTH', 'FISCAL_QUARTER', 'FISCAL_YEAR', 'HOUR_IN_DAY', 'WEEK_IN_MONTH', 'WEEK_IN_YEAR']
 SORT_ORDERS     = ['ASC', 'DESC']
-OPERATORS       = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IS NOT', 'IS', 'IN']
+OPERATORS       = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IS NOT', 'IS', 'IN', 'INCLUDES', 'EXCLUDES']
 CONDITIONALS    = ['AND', 'OR', 'NOT']
 BOOLEAN         = ['true', 'false', 'null']
 MATH            = ['+', '-']
@@ -118,6 +116,9 @@ MATH_MULTI      = ['/', '*']
 SEPARATOR       = /^,/
 WHITESPACE      = /^[ \n\r]+/
 LITERAL         = /^`?([a-z_][a-z0-9_]{0,})`?/i
+DATE_LITERAL    = /^([\d]{4})-([\d]{2})-([\d]{2})(T([\d]{2}):([\d]{2}):([\d]{2})(.([\d]{3}))?(Z|([\+\-])([\d]{2}):([\d]{2})))?/
+RESERVED_DATE_LITERAL =
+  /^(YESTERDAY|TODAY|TOMORROW|(LAST|THIS|NEXT)_(WEEK|MONTH|(FISCAL_)?(QUARTER|YEAR))|(LAST|NEXT)_(90_DAYS|N_(DAYS|(FISCAL_)?(QUARTERS|YEARS):\d+)))/i
 NUMBER          = /^[0-9]+(\.[0-9]+)?/
 STRING          = /^'([^\\']*(?:\\.[^\\']*)*)'/
 DBLSTRING       = /^"([^\\"]*(?:\\.[^\\"]*)*)"/
@@ -126,7 +127,8 @@ DBLSTRING       = /^"([^\\"]*(?:\\.[^\\"]*)*)"/
 exports.tokenize = (soql, opts) -> (new Lexer(soql, opts)).tokens
 
 exports.dictionary =
-  FUNCTION  : FUNCTIONS.concat(DATE_FUNCTIONS)
+  AGGR_FUNCTION: AGGR_FUNCTIONS
+  DATE_FUNCTION: DATE_FUNCTIONS
   DIRECTION : SORT_ORDERS
   OPERATOR  : OPERATORS
   CONDITIONAL : CONDITIONALS
@@ -144,5 +146,5 @@ exports.priority = (name) ->
   switch type
     when 'KEYWORD', 'DIRECTION', 'OPERATOR' then 3
     when 'LITERAL' then 2
-    when 'FUNCTION' then 1
+    when 'AGGR_FUNCTION', 'DATE_FUNCTION' then 1
     else 0
