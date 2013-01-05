@@ -44,13 +44,16 @@ class Node
     else
       println "#{lpad}- '#{@value}' (#{@type})"
 
-  find: (type) ->
+  find: (type, stopType) ->
     if @childNodes?
       for cn in @childNodes
-        return cn if match(type, cn.type)
-      for cn in @childNodes
-        n = cn.find(type)
-        return n if n?
+        if match(stopType, cn.type)
+          continue
+        else if match(type, cn.type)
+          return cn
+        else
+          n = cn.find(type, stopType)
+          return n if n?
     null
 
   findPrevious: (type, stopType) ->

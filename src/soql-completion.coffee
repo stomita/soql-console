@@ -25,18 +25,34 @@ complete = (text, caret, callback) ->
   { pos, inserting } = findCaretPosition(tokens, caret)
   if inserting
     pos++ if pos < tokens.length - 1
-    tokens.splice(pos, 0, [ "LITERAL" , "", tokens[pos][3], caret ])
+    tokens.splice(pos, 0, [ "UNDEFINED" , "", tokens[pos][3], caret ])
+  else
+    tokens.splice(pos, 1, [ "UNDEFINED" , "", tokens[pos][2], tokens[pos][3] ])
   # debugTokens tokens
   target = tokens[pos]
   pivot = target[3]
   results = parseTokens(tokens, pos)
-  asyncMap results, (r, cb) ->
-    if typeof r == 'string'
-      cb([ type: r, value: r ])
-    else if r.type == 'ObjectType'
-      getObjectTypes(r, cb)
-    else if r.type == 'FieldName'
-      getFieldNames(r, cb)
+  nodes = []
+  types = {}
+  for n in results
+    if typeof n == 'string'
+      n = { type: n, value: n}
+    else if n.type == 'TERMINAL'
+      if n.value
+        n = { type: lexer.types[n.value.toUpperCase()] || n.type, value: n.value }
+      else
+        continue
+    unless types[n.type]
+      nodes.push(n)
+      types[n.type] = true
+
+  asyncMap nodes, (n, cb) ->
+    if n.type == 'ObjectType'
+      getObjectTypes(n, cb)
+    else if n.type == 'FieldName'
+      getFieldNames(n, cb)
+    else if n.value
+      cb([ n ])
     else
       cb([])
   ,
@@ -44,7 +60,12 @@ complete = (text, caret, callback) ->
     candidates = []
     candidates.push.apply(candidates, ret) for ret in rets
     candidates = candidates.sort (c1, c2) ->
-      if c1.value > c2.value then 1 else -1
+      if c1.type > c2.type then 1 
+      else if c1.type < c2.type then -1
+      else if c1.value > c2.value then 1
+      else if c1.value < c2.value then -1
+      else 0
+    console.log(candidates)
     callback(candidates, pivot)
   pivot
 
@@ -54,25 +75,34 @@ complete = (text, caret, callback) ->
 parseTokens = (tokens, pos) ->
 
   tryParse = (tokens, pos, depth=0) ->
-    return [] if depth > 10
-    # debugTokens(tokens)
+    return [] if depth > 5
     try
       tree = parser.parse(tokens)
     catch e
       epos = e.pos - 1
+      debugTokens(tokens, pos, epos)
       return [] unless e.expected?
       expected = (name.substring(1, name.length-1) for name in e.expected)
-      if epos == pos
-        candidates = []
-        for name in expected
-          words = lexer.dictionary[name]
-          candidates.push.apply(candidates, words) if words
-      else
-        etoken = getExpectedToken(expected, tokens[epos])
-        tokens = Array.prototype.slice.call(tokens)
-        tokens.splice(epos, 0, etoken)
-        inc = if epos < pos then 1 else 0
-        candidates = tryParse(tokens, pos+inc, depth+1)
+      actual = tokens[epos]
+      candidates = []
+      etokens = []
+      for name in expected
+        words = lexer.dictionary[name]
+        if words && epos == pos
+          candidates.push.apply(candidates, words)
+        else
+          etokens.push([ name, "", actual[2], actual[3] ])
+      if etokens.length > 0
+        etokens = etokens.sort (t1, t2) ->
+          p1 = lexer.priority(t1[0])
+          p2 = lexer.priority(t2[0])
+          if p1 < p2 then 1 else if p1 > p2 then -1 else 0
+        etoken = etokens[0]
+        tkns = Array.prototype.slice.call(tokens)
+        replace = if actual[0] == 'UNDEFINED' then 1 else 0
+        tkns.splice(epos, replace, etoken)
+        inc = if epos < pos then 1 - replace else 0
+        candidates.push.apply(candidates, tryParse(tkns, pos+inc, depth+1))
       return candidates
 
     # tree.print()
@@ -81,19 +111,6 @@ parseTokens = (tokens, pos) ->
 
   tryParse(tokens, pos)
 
-###
-###
-getExpectedToken = (names, actual) ->
-  p = lexer.priority
-  names = names.sort (n1, n2) ->
-    p1 = p[n1] ? 100
-    p2 = p[n2] ? 100
-    if p1 > p2 then 1 else if p1 < p2 then -1 else 0
-  for name in names
-    words = lexer.dictionary[name] || lexer.examples[name]
-    if words && words.length > 0
-      return [ name, words[0], actual[2], actual[3] ]
-  null
 
 ###
 ###
@@ -106,7 +123,7 @@ findCaretPosition = (tokens, caret) ->
     if ntpos >= caret
       inserting =
         caret > tpos + tlen ||
-        (caret == tpos + tlen && /^(DOT|SEPARATOR)$/.test(ttag))
+        (caret == tpos + tlen && /^(DOT|SEPARATOR|LEFT_PAREN|RIGHT_PAREN)$/.test(ttag))
       return { pos: i, inserting: inserting }
   { pos: tokens.length-1, inserting: true }
 
@@ -126,7 +143,7 @@ getObjectTypes = (node, callback) ->
     return handleError(message: "Nested more than 2 levels")
 
   if outerSelectNode # inner select query
-    objectType = outerSelectNode.find('ObjectType')?.value
+    objectType = outerSelectNode.find('ObjectType', selectTypeRegexp)?.value
     getConnection().describeSObject objectType, (err, res) ->
       return handleError(err) if err
       candidates =
@@ -202,15 +219,15 @@ getFieldNames = (node, callback) ->
   inGroupClause = node.findParent("GroupClause", selectTypeRegexp)?
 
   if outerSelectNode # inner select query
-    objectType = outerSelectNode.find('ObjectType')?.value
-    relationshipName = selectNode.find('ObjectType')?.value
+    objectType = outerSelectNode.find('ObjectType', selectTypeRegexp)?.value
+    relationshipName = selectNode.find('ObjectType', selectTypeRegexp)?.value
     describeNestedObject objectType, relationshipName, (err, so) ->
       return handleError(err) if err
       describeFields so.name, parentFields, (err, fields) ->
         return handleError(err) if err
         handleFields(fields)
   else # root query
-    objectType = selectNode.find('ObjectType')?.value
+    objectType = selectNode.find('ObjectType', selectTypeRegexp)?.value
     describeFields objectType, parentFields, (err, fields) ->
       return handleError(err) if err
       handleFields(fields)
@@ -259,8 +276,8 @@ getConnection = ->
 
 ###
 ###
-debugTokens = (tokens) ->
-  console.log (token[1]+"("+token[0]+":"+token[3]+")" for token in tokens).join(' ')
+debugTokens = (tokens, pos, epos) ->
+  console.log ("#{token[1]}(#{token[0]}:#{token[3]})#{if pos==i then '*' else ''}#{if epos==i then '!' else ''}" for token, i in tokens).join(' ')
 
 
 exports.connection = null

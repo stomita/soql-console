@@ -65,7 +65,6 @@ getCharPosition = (el, index) ->
 ###
 ###
 htmlesc = (str) ->
-  console.log str
   (str || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
              .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
              .replace(/\n/g, '<br>')

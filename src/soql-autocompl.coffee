@@ -180,7 +180,7 @@ autocomplete = (textarea, runQuery) ->
   ###
   moveToPrevCandidate = ->
     curr = complMenu.find('li.active')
-    prev = curr.prev('li.visible')
+    prev = curr.prevAll('li.visible').first()
     if prev.size() == 1
       curr.removeClass('active')
       prev.addClass('active')
@@ -198,7 +198,7 @@ autocomplete = (textarea, runQuery) ->
   ###
   moveToNextCandidate = ->
     curr = complMenu.find('li.active')
-    next = curr.next('li.visible')
+    next = curr.nextAll('li.visible').first()
     if next.size() == 1
       curr.removeClass('active')
       next.addClass('active')

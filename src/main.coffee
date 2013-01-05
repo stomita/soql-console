@@ -44,6 +44,7 @@ init = (compl) ->
     startTime = new Date().getTime()
     compl.connection.query soql,
       onSuccess: (res) ->
+        console.log res
         stopLoading()
         elapsedTime = (new Date().getTime() - startTime)
         showMessage "Query executed successfully",

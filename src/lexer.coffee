@@ -64,16 +64,17 @@ class Lexer
     @tokenizeFromWord('HAVING') or
     @tokenizeFromWord('LIMIT') or
     @tokenizeFromWord('OFFSET') or
-    @tokenizeFromWord('AS')
-  
+    @tokenizeFromRegex('NULLS_FIRST', /^(NULLS\s+FIRST)/i) or
+    @tokenizeFromRegex('NULLS_LAST', /^(NULLS\s+LAST)/i)
+
   dotToken: -> @tokenizeFromWord('DOT', '.')
-  operatorToken:    -> @tokenizeFromList('OPERATOR', SOQL_OPERATORS)
+  operatorToken:    -> @tokenizeFromList('OPERATOR', OPERATORS)
   mathToken:        ->
     @tokenizeFromList('MATH', MATH) or
     @tokenizeFromList('MATH_MULTI', MATH_MULTI)
-  conditionalToken: -> @tokenizeFromList('CONDITIONAL', SOQL_CONDITIONALS)
-  functionToken:    -> @tokenizeFromList('FUNCTION', SOQL_FUNCTIONS)
-  sortOrderToken:   -> @tokenizeFromList('DIRECTION', SOQL_SORT_ORDERS)
+  conditionalToken: -> @tokenizeFromList('CONDITIONAL', CONDITIONALS)
+  functionToken:    -> @tokenizeFromList('FUNCTION', FUNCTIONS)
+  sortOrderToken:   -> @tokenizeFromList('DIRECTION', SORT_ORDERS)
   booleanToken:     -> @tokenizeFromList('BOOLEAN', BOOLEAN)
   seperatorToken:   -> @tokenizeFromRegex('SEPARATOR', SEPARATOR)
   literalToken:     -> @tokenizeFromRegex('LITERAL', LITERAL, 1, 0)
@@ -105,43 +106,43 @@ class Lexer
   regexEscape: (str) ->
     str.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
   
-SOQL_KEYWORDS        = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'AS']
-SOQL_FUNCTIONS       = ['AVG', 'COUNT', 'MIN', 'MAX', 'SUM']
-SOQL_SORT_ORDERS     = ['ASC', 'DESC']
-SOQL_OPERATORS       = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IS NOT', 'IS', 'IN']
-SOQL_CONDITIONALS    = ['AND', 'OR', 'NOT']
-BOOLEAN              = ['true', 'false', 'null']
-MATH                 = ['+', '-']
-MATH_MULTI           = ['/', '*']
-SEPARATOR            = /^,/
-WHITESPACE           = /^[ \n\r]+/
-LITERAL              = /^`?([a-z_][a-z0-9_]{0,})`?/i
-NUMBER               = /^[0-9]+(\.[0-9]+)?/
-STRING               = /^'([^\\']*(?:\\.[^\\']*)*)'/
-DBLSTRING            = /^"([^\\"]*(?:\\.[^\\"]*)*)"/
+KEYWORDS        = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'NULLS FIRST', 'NULLS LAST']
+FUNCTIONS       = ['AVG', 'COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'SUM']
+DATE_FUNCTIONS  = []
+SORT_ORDERS     = ['ASC', 'DESC']
+OPERATORS       = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IS NOT', 'IS', 'IN']
+CONDITIONALS    = ['AND', 'OR', 'NOT']
+BOOLEAN         = ['true', 'false', 'null']
+MATH            = ['+', '-']
+MATH_MULTI      = ['/', '*']
+SEPARATOR       = /^,/
+WHITESPACE      = /^[ \n\r]+/
+LITERAL         = /^`?([a-z_][a-z0-9_]{0,})`?/i
+NUMBER          = /^[0-9]+(\.[0-9]+)?/
+STRING          = /^'([^\\']*(?:\\.[^\\']*)*)'/
+DBLSTRING       = /^"([^\\"]*(?:\\.[^\\"]*)*)"/
 
   
 exports.tokenize = (soql, opts) -> (new Lexer(soql, opts)).tokens
 
 exports.dictionary =
-  FUNCTION  : SOQL_FUNCTIONS
-  DIRECTION : SOQL_SORT_ORDERS
-  OPERATOR  : SOQL_OPERATORS
-  CONDITIONAL  : SOQL_CONDITIONALS
-  SEPARATOR    : [ ',' ]
-  DOT          : [ '.' ]
-  LEFT_PAREN   : [ '(' ]
-  RIGHT_PAREN  : [ ')' ]
+  FUNCTION  : FUNCTIONS.concat(DATE_FUNCTIONS)
+  DIRECTION : SORT_ORDERS
+  OPERATOR  : OPERATORS
+  CONDITIONAL : CONDITIONALS
 
-exports.dictionary[keyword.replace(/\s+/g, '_')] = [ keyword ] for keyword in SOQL_KEYWORDS
+exports.dictionary[keyword.replace(/\s+/g, '_')] = [ keyword ] for keyword in KEYWORDS
 
-exports.examples =
-  LITERAL : 'A'
-  NUMBER  : '1'
-  STRING  : "'A'"
-  BOOLEAN : 'true'
+exports.types = do ->
+  types = {}
+  for type, names of exports.dictionary
+    types[name] = type for name in names
+  types
 
-exports.priority = {}
-exports.priority[name] = 1 for name in SOQL_KEYWORDS
-exports.priority[name] = 2 for name, value of exports.examples
-
+exports.priority = (name) ->
+  type = exports.types[name.toUpperCase()] || name
+  switch type
+    when 'KEYWORD', 'DIRECTION', 'OPERATOR' then 3
+    when 'LITERAL' then 2
+    when 'FUNCTION' then 1
+    else 0

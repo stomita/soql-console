@@ -38,7 +38,8 @@ grammar =
   ]
 
   SelectClause: [
-    'SELECT SelectFieldList FROM ObjectType'
+    'SELECT SelectFieldList FROM Object'
+    'SELECT COUNT LEFT_PAREN RIGHT_PAREN FROM Object'
   ]
 
   SelectFieldList: [
@@ -48,11 +49,20 @@ grammar =
 
   SelectField: [
     'Field'
-    'Field AS Literal'
+    'Function LEFT_PAREN FieldList RIGHT_PAREN'
     'LEFT_PAREN InnerSelect RIGHT_PAREN'
   ]
 
+  Object: [
+    'ObjectType'
+    'ObjectType Alias'
+  ]
+
   ObjectType: [
+    'Literal'
+  ]
+
+  Alias: [
     'Literal'
   ]
 
@@ -78,8 +88,19 @@ grammar =
   ]
 
   OrderArg: [
+    'OrderField'
+    'OrderField DIRECTION'
+    'OrderField DIRECTION NullPolicy'
+  ]
+
+  NullPolicy: [
+    'NULLS_FIRST'
+    'NULLS_LAST'
+  ]
+
+  OrderField: [
     'Field'
-    'Field DIRECTION'
+    'Function LEFT_PAREN Field RIGHT_PAREN'
   ]
 
   GroupClause: [
@@ -88,7 +109,22 @@ grammar =
   ]
 
   GroupBasicClause: [
-    'GROUP_BY FieldList'
+    'GROUP_BY GroupByFieldList'
+    'GROUP_BY GroupByFieldList'
+  ]
+
+  GroupByFieldList: [
+    'GroupByField'
+    'GroupByField SEPARATOR GroupByFieldList'
+  ]
+
+  GroupByField: [
+    'Field'
+    'Function LEFT_PAREN Field RIGHT_PAREN'
+  ]
+
+  Function: [
+    'FUNCTION'
   ]
 
   HavingClause: [
@@ -102,7 +138,22 @@ grammar =
   ]
 
   ConditionExpression: [
-    'Field OPERATOR Value'
+    'ConditionField OPERATOR Value'
+  ]
+
+  ConditionField: [
+    'Field'
+    'Function LEFT_PAREN FunctionArgList RIGHT_PAREN'
+  ]
+
+  FunctionArgList: [
+    'FunctionArg'
+    'FunctionArg SEPARATOR FunctionArgList'
+  ]
+
+  FunctionArg: [
+    'Field'
+    'Value'
   ]
 
   FieldList: [

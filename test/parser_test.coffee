@@ -63,7 +63,7 @@ describe "parsing soql", ->
         expect(node.type).to.match(selectTypeRegexp)
 
       it "should find related object type node with value 'Account'", ->
-        node = node.find('ObjectType')
+        node = node.find('ObjectType', selectTypeRegexp)
         expect(node).to.be.a(Node)
         expect(node.type).to.equal('ObjectType')
         expect(node.value).to.equal('Account')
@@ -125,7 +125,7 @@ describe "parsing soql", ->
         expect(node.type).to.match(selectTypeRegexp)
 
       it "should find related object type node with value 'Account'", ->
-        node = node.find('ObjectType')
+        node = node.find('ObjectType', selectTypeRegexp)
         expect(node).to.be.a(Node)
         expect(node.type).to.equal('ObjectType')
         expect(node.value).to.equal('Account')
@@ -158,7 +158,7 @@ describe "parsing soql", ->
         expect(node.type).to.match(selectTypeRegexp)
 
       it "should find related object type node with value 'Contacts'", ->
-        node = node.find('ObjectType')
+        node = node.find('ObjectType', selectTypeRegexp)
         expect(node).to.be.a(Node)
         expect(node.type).to.equal('ObjectType')
         expect(node.value).to.equal('Contacts')
@@ -184,7 +184,7 @@ describe "parsing soql", ->
         expect(node.type).to.match(selectTypeRegexp)
 
       it "should find related object type node with value 'Account'", ->
-        node = node.find('ObjectType')
+        node = node.find('ObjectType', selectTypeRegexp)
         expect(node).to.be.a(Node)
         expect(node.type).to.equal('ObjectType')
         expect(node.value).to.equal('Account')
@@ -208,7 +208,7 @@ describe "parsing soql", ->
         expect(node.type).to.match(selectTypeRegexp)
 
       it "should find related object type node with value 'Account'", ->
-        node = node.find('ObjectType')
+        node = node.find('ObjectType', selectTypeRegexp)
         expect(node).to.be.a(Node)
         expect(node.type).to.equal('ObjectType')
         expect(node.value).to.equal('Account')
