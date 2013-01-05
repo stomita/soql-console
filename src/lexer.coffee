@@ -14,10 +14,10 @@ class Lexer
                        @functionToken() or
                        @sortOrderToken() or
                        @seperatorToken() or
-                       @operatorToken() or
+                       @compOpToken() or
                        @mathToken() or
                        @dotToken() or
-                       @conditionalToken() or
+                       @logicOpToken() or
                        @dateLiteralToken() or
                        @numberToken() or
                        @stringToken() or
@@ -68,13 +68,13 @@ class Lexer
     @tokenizeFromRegex('NULLS_LAST', /^(NULLS\s+LAST)/i)
 
   dotToken: -> @tokenizeFromWord('DOT', '.')
-  operatorToken:    -> @tokenizeFromList('OPERATOR', OPERATORS)
+  compOpToken:    -> @tokenizeFromList('COMP_OPERATOR', COMP_OPERATORS)
   mathToken:        ->
     @tokenizeFromList('MATH', MATH) or
     @tokenizeFromList('MATH_MULTI', MATH_MULTI)
-  conditionalToken: -> @tokenizeFromList('CONDITIONAL', CONDITIONALS)
+  logicOpToken: -> @tokenizeFromList('LOGIC_OPERATOR', LOGIC_OPERATORS)
   functionToken:    ->
-    @tokenizeFromList('AGGR_FUNCTION', AGGR_FUNCTIONS)
+    @tokenizeFromList('AGGR_FUNCTION', AGGR_FUNCTIONS) or
     @tokenizeFromList('DATE_FUNCTION', DATE_FUNCTIONS)
   sortOrderToken:   -> @tokenizeFromList('DIRECTION', SORT_ORDERS)
   booleanToken:     -> @tokenizeFromList('BOOLEAN', BOOLEAN)
@@ -108,8 +108,8 @@ KEYWORDS        = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 
 AGGR_FUNCTIONS  = ['AVG', 'COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'SUM']
 DATE_FUNCTIONS  = ['CALENDAR_MONTH', 'CALENDAR_QUARTER', 'CALENDAR_YEAR', 'DAY_IN_MONTH', 'DAY_IN_WEEK', 'DAY_IN_YEAR', 'DAY_ONLY', 'FISCAL_MONTH', 'FISCAL_QUARTER', 'FISCAL_YEAR', 'HOUR_IN_DAY', 'WEEK_IN_MONTH', 'WEEK_IN_YEAR']
 SORT_ORDERS     = ['ASC', 'DESC']
-OPERATORS       = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IS NOT', 'IS', 'IN', 'INCLUDES', 'EXCLUDES']
-CONDITIONALS    = ['AND', 'OR', 'NOT']
+COMP_OPERATORS  = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IS NOT', 'IS', 'IN', 'INCLUDES', 'EXCLUDES']
+LOGIC_OPERATORS = ['AND', 'OR', 'NOT']
 BOOLEAN         = ['true', 'false', 'null']
 MATH            = ['+', '-']
 MATH_MULTI      = ['/', '*']
@@ -130,21 +130,24 @@ exports.dictionary =
   AGGR_FUNCTION: AGGR_FUNCTIONS
   DATE_FUNCTION: DATE_FUNCTIONS
   DIRECTION : SORT_ORDERS
-  OPERATOR  : OPERATORS
-  CONDITIONAL : CONDITIONALS
+  COMP_OPERATOR : COMP_OPERATORS
+  LOGIC_OPERATOR : LOGIC_OPERATORS 
 
 exports.dictionary[keyword.replace(/\s+/g, '_')] = [ keyword ] for keyword in KEYWORDS
 
 exports.types = do ->
   types = {}
-  for type, names of exports.dictionary
-    types[name] = type for name in names
+  types[name] = 'function' for name in AGGR_FUNCTIONS.concat(DATE_FUNCTIONS)
+  types[name] = 'direction' for name in SORT_ORDERS
+  types[name] = 'keyword' for name in KEYWORDS
+  types[name] = 'operator' for name in COMP_OPERATORS
+  types[name] = 'logical' for name in LOGIC_OPERATORS
   types
 
 exports.priority = (name) ->
   type = exports.types[name.toUpperCase()] || name
   switch type
-    when 'KEYWORD', 'DIRECTION', 'OPERATOR' then 3
+    when 'keyword', 'direction', 'operator' then 3
     when 'LITERAL' then 2
-    when 'AGGR_FUNCTION', 'DATE_FUNCTION' then 1
+    when 'function' then 1
     else 0

@@ -77,12 +77,12 @@ grammar =
 
   ConditionExpressionList: [
     'ConditionExpression'
-    'ConditionExpression CONDITIONAL ConditionExpressionList'
+    'ConditionExpression LOGIC_OPERATOR ConditionExpressionList'
     'LEFT_PAREN ConditionExpressionList RIGHT_PAREN'
   ]
 
   ConditionExpression: [
-    'ConditionField OPERATOR Value'
+    'ConditionField COMP_OPERATOR Value'
   ]
 
   ConditionField: [
@@ -154,7 +154,7 @@ grammar =
 
   HavingConditionExpressionList: [
     'HavingConditionExpression'
-    'HavingConditionExpression CONDITIONAL HavingConditionExpressionList'
+    'HavingConditionExpression LOGIC_OPERATOR HavingConditionExpressionList'
     'LEFT_PAREN HavingConditionExpressionList RIGHT_PAREN'
   ]
 
@@ -224,8 +224,8 @@ grammar =
 
 operators = [
   ['left', 'Op']
-  ['left', 'OPERATOR']
-  ['left', 'CONDITIONAL']
+  ['left', 'COMP_OPERATOR']
+  ['left', 'LOGIC_OPERATOR']
 ]
 
 tokens = {}
@@ -262,7 +262,7 @@ exports.parser = new Parser
 #  lex         : lex
   tokens      : (name for name of tokens).join ' '
   bnf         : grammar
-  operators   : operators.reverse()
+# operators   : operators.reverse()
   startSymbol : 'Root'
 ,
   type: 'lr'

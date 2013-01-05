@@ -37,16 +37,13 @@ complete = (text, caret, callback) ->
   types = {}
   for n in results
     if typeof n == 'string'
-      n = { type: n, value: n}
+      n = { type: lexer.types[n.toUpperCase()] || n, value: n}
     else if n.type == 'TERMINAL'
       if n.value
         n = { type: lexer.types[n.value.toUpperCase()] || n.type, value: n.value }
       else
         continue
-    unless types[n.type]
-      nodes.push(n)
-      types[n.type] = true
-
+    nodes.push(n)
   asyncMap nodes, (n, cb) ->
     if n.type == 'ObjectType'
       getObjectTypes(n, cb)

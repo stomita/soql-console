@@ -39,8 +39,8 @@ autocomplete = (textarea, runQuery) ->
           else
             moveToNextCandidate()
         when 13 # return
-          word = getSelectedCandidate()
-          execCompletion(word) if word
+          candidate = getSelectedCandidate()
+          execCompletion(candidate) if candidate
         when 27 # ESC
           endCompletion()
         when 32 # Space
@@ -124,12 +124,14 @@ autocomplete = (textarea, runQuery) ->
       for c in candidates 
         matched.push(c) if c.value?.toUpperCase().indexOf(input) == 0
       if matched.length == 1
-        execCompletion(matched[0].value)
+        execCompletion(matched[0])
       else
         complMenu.empty()
         for c in candidates
-          $('<li>')
+          li = $('<li>')
             .data('value', c.value)
+            .data('type', c.type)
+            .data('fieldType', c.fieldType)
             .data('label', c.label)
             .append(
               do ->
@@ -137,7 +139,10 @@ autocomplete = (textarea, runQuery) ->
                 if c.fieldType
                   anchor.append(
                     $("<span class=\"label field-type field-type-#{c.fieldType}\">").text(c.fieldType))
-                  anchor.append(' ')
+                else
+                  anchor.append(
+                    $("<span class=\"label #{c.type}\">").text(c.type))
+                anchor.append(' ')
                 anchor.append($('<span>').text(c.value))
                 if c.label
                   anchor.append($('<span class="display-label">').text(" (#{c.label})"))
@@ -168,7 +173,13 @@ autocomplete = (textarea, runQuery) ->
   ###
   ###
   getSelectedCandidate = ->
-    complMenu.find('li.active').first().data('value')
+    selected = complMenu.find('li.active').first()
+    {
+      type: selected.data('type')
+      fieldType: selected.data('fieldType')
+      label: selected.data('label')
+      value: selected.data('value')
+    }
 
   ###
   ###
@@ -204,8 +215,8 @@ autocomplete = (textarea, runQuery) ->
       next.addClass('active')
     else
       if complMenu.find('li.visible').size() == 1
-        word = getSelectedCandidate()
-        execCompletion(word)
+        candidate = getSelectedCandidate()
+        execCompletion(candidate)
       else
         selectFirstCandidate()
     adjustCandidateScroll()
@@ -228,14 +239,24 @@ autocomplete = (textarea, runQuery) ->
 
   ###
   ###
-  execCompletion = (word) ->
+  execCompletion = (candidate) ->
     text = textarea.val()
+    word = candidate.value
     preText = text.substring(0, pivot)
     cpos = textarea.caretPosition()
     postText = text.substring(cpos)
-    word += if postText.length == 0 then " " else ""
+    caret = pivot + word.length
+    if candidate.type == "function"
+      word += "()"
+      caret += 1
+    else if candidate.type == "field" && candidate.fieldType == "reference"
+      word += "."
+      caret += 1
+    else if postText.length == 0
+      word += " "
+      caret += 1
     textarea.val(preText + word + postText)
-    textarea.caretPosition(pivot + word.length)
+    textarea.caretPosition(caret)
     endCompletion()
 
   ###

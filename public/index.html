@@ -26,11 +26,16 @@
 .autocompl-menu li.active a {
   color: white;
 }
-.autocompl-menu a .field-type {
-  width: 60px;
+.autocompl-menu a .label {
+  width: 50px;
+  text-align: center;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.autocompl-menu a .function {
+  background-color: lightgray;
+  color: black;
 }
 .autocompl-menu a .field-type-string,
 .autocompl-menu a .field-type-phone,
@@ -77,7 +82,7 @@
       <div class="navbar-inner">
         <div class="container">
           <a class="brand" href="#">SOQL console</a>
-          <ul id="global-menu" class="nav">
+          <ul id="global-menu" class="nav pull-right">
             <li>
               <a id="login-menu" role="button" href="#">Login</a>
             </li>
