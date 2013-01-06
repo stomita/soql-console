@@ -34,8 +34,9 @@ describe "completing", ->
     expect: (candidates, index) ->
       expect(candidates.length).to.be.above(0)
       for candidate in candidates
-        expect(candidate).to.have.property('type', 'field')
-        expect(candidate).to.have.property('fieldType')
+        expect(candidate).to.have.property('type')
+        expect(candidate.type in [ 'field', 'function' ]).to.be.ok()
+        expect(candidate).to.have.property('fieldType') if candidate.type == 'field'
       expect(index).to.equal(@caret-2) # SELECT Id, |Na FROM Account
   ,
     input: "SELECT Id, Owner.| FROM Account"
