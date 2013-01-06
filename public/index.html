@@ -84,10 +84,10 @@
           <a class="brand" href="#">SOQL console</a>
           <ul id="global-menu" class="nav pull-right">
             <li>
-              <a id="login-menu" role="button" href="#">Login</a>
+              <a id="login-menu" style="display:none" role="button" href="#">Login</a>
             </li>
             <li>
-              <a id="logout-menu" class="pull-right" role="button" href="#">
+              <a id="logout-menu" style="display:none" role="button" href="#">
                 Logged in as '<span id="user-info-username"></span>'
               </a>
             </li>
@@ -104,28 +104,12 @@
 
     <!-- main contents -->
     <div class="container">
-      <!--
-      <div id="top-message">
-        <div class="hero-unit clearfix">
-          <div class="text">
-            <h2>Intelligent Console for Force.com API Developers</h2>
-            <p></p>
-            <p>
-              <a class="btn btn-primary btn-large" 
-                 data-toggle="modal"
-                 href="#api-select-dialog">Login with Salesforce</a>
-            </p>
-          </div>
-        </div>
-      </div>
-      -->
       <div id="console">
         <div id="query">
-          <h3>Input SOQL
-            <span id="user-info-username"></span>
-          </h3>
+          <h3>Input SOQL</h3>
           <textarea class="input"></textarea>
           <button class="btn btn-primary query">Query</button>
+          <a href="#help-dialog" id="help-button" class="pull-right" data-toggle="modal">Help</a>
         </div>
         <div id="alert"></div>
         <div id="result">
@@ -200,5 +184,47 @@
       </div>
     </div>
 
+
+    <!-- Help Dialog -->
+    <div id="help-dialog" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>Help</h3>
+      </div>
+      <div class="modal-body">
+        <h4>Start Completion</h4>
+        <ul>
+          <li>Tab</li>
+          <li>Ctrl + Space</li>
+        </ul>
+        <h4>Move Cursor to Next Candidate</h4>
+        <ul>
+          <li>&#8595; (Down Arrow)</li>
+          <li>Tab</li>
+          <li>Ctrl + Space</li>
+        </ul>
+        <h4>Move Cursor to Previous Candidate</h4>
+        <ul>
+          <li>&#8593; (Up Arrow)</li>
+          <li>Shift + Tab</li>
+          <li>Ctrl + Shift + Space</li>
+        </ul>
+        <h4>Execute Completion</h4>
+        <ul>
+          <li>Return</li>
+        </ul>
+        <h4>Cancel Completion</h4>
+        <ul>
+          <li>Esc</li>
+        </ul>
+        <h4>Run Query</h4>
+        <ul>
+          <li>Ctrl + Return</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+      </div>
+    </div>
   </body>
 </html>
