@@ -1,6 +1,12 @@
 ###
 # lexer.coffee
+#
+# Copyright 2012, Shinichi Tomita <shinichi.tomita@gmail.com>
+#
+# Based on SQL Parser
+# https://github.com/forward/sql-parser
 ###
+
 class Lexer
   constructor: (soql, opts={}) ->
     @soql = soql

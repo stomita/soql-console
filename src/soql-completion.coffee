@@ -1,6 +1,10 @@
 ###
 # soql-completion.coffee
+#
+# Copyright 2012, Shinichi Tomita <shinichi.tomita@gmail.com>
+#
 ###
+
 lexer  = require "./lexer"
 parser = require "./parser"
 Node   = require "./node"

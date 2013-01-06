@@ -1,9 +1,12 @@
 ###
 # soql-autocompl.coffee
+#
+# Copyright 2012, Shinichi Tomita <shinichi.tomita@gmail.com>
+#
 ###
+
 require "./caret"
 SoqlCompl = require "./soql-completion"
-
 
 ###
 ###
