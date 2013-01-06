@@ -19,9 +19,9 @@ init = (conn, lstnrs) ->
 
   loginDialog.find('select[name=env]').change ->
     if this.value == '_others_'
-      loginDialog.find('input[name=server]').parent('.control-group').show()
+      loginDialog.find('input[name=server]').parents('.control-group').show()
     else
-      loginDialog.find('input[name=server]').parent('.control-group').hide()
+      loginDialog.find('input[name=server]').parents('.control-group').hide()
 
   loginDialog.find('button.connect').click -> authorize()
 
