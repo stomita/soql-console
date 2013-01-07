@@ -82,6 +82,7 @@ parseTokens = (tokens, pos) ->
     catch e
       epos = e.pos - 1
       # debugTokens(tokens, pos, epos)
+
       return [] unless e.expected?
       expected = (name.substring(1, name.length-1) for name in e.expected)
       actual = tokens[epos]

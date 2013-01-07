@@ -58,13 +58,14 @@ grammar =
 
   SelectField: [
     'Field'
-    'SelectFieldFunction LEFT_PAREN FieldList RIGHT_PAREN'
+    'SelectFunction LEFT_PAREN Field RIGHT_PAREN'
+    'SelectFunction LEFT_PAREN Field RIGHT_PAREN Alias'
     'LEFT_PAREN InnerSelect RIGHT_PAREN'
   ]
 
-  SelectFieldFunction: [
-    'AGGR_FUNCTION'
-    'DATE_FUNCTION'
+  SelectFunction: [
+    'AggregateFunction'
+    'DateFunction'
   ]
 
   Object: [
@@ -100,7 +101,7 @@ grammar =
   ]
 
   ConditionFunction: [
-    'DATE_FUNCTION'
+    'DateFunction'
   ]
 
   OrderClause: [
@@ -129,8 +130,8 @@ grammar =
   ]
 
   OrderFunction: [
-    'AGGR_FUNCTION'
-    'DATE_FUNCTION'
+    'AggregateFunction'
+    'DateFunction'
   ]
 
   GroupClause: [
@@ -139,7 +140,6 @@ grammar =
   ]
 
   GroupBasicClause: [
-    'GROUP_BY GroupByFieldList'
     'GROUP_BY GroupByFieldList'
   ]
 
@@ -154,7 +154,7 @@ grammar =
   ]
 
   GroupByFunction: [
-    'DATE_FUNCTION'
+    'DateFunction'
   ]
 
   HavingClause: [
@@ -177,8 +177,8 @@ grammar =
   ]
 
   HavingConditionFunction: [
-    'AGGR_FUNCTION'
-    'DATE_FUNCTION'
+    'AggregateFunction'
+    'DateFunction'
   ]
 
   LimitClause: [
@@ -228,6 +228,14 @@ grammar =
 
   Date: [
     'DATE_LITERAL'
+  ]
+
+  AggregateFunction: [
+    'AGGR_FUNCTION'
+  ]
+
+  DateFunction: [
+    'DATE_FUNCTION'
   ]
 
 

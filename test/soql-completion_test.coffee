@@ -53,7 +53,13 @@ describe "completing", ->
       for candidate in candidates
         expect(candidate).to.have.property('type', 'childRelationship')
       expect(index).to.equal(@caret)
-
+  ,
+    input: "SELECT Id, Max(Num|) mx FROM Account"
+    expect: (candidates, index) ->
+      expect(candidates.length).to.be.above(0)
+      for candidate in candidates
+        expect(candidate).to.have.property('type', 'field')
+      expect(index).to.equal(@caret-3) # SELECT Id, Max(|Num)
   ]
 
   for cs in cases
