@@ -114,7 +114,7 @@ KEYWORDS        = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 
 AGGR_FUNCTIONS  = ['AVG', 'COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'SUM']
 DATE_FUNCTIONS  = ['CALENDAR_MONTH', 'CALENDAR_QUARTER', 'CALENDAR_YEAR', 'DAY_IN_MONTH', 'DAY_IN_WEEK', 'DAY_IN_YEAR', 'DAY_ONLY', 'FISCAL_MONTH', 'FISCAL_QUARTER', 'FISCAL_YEAR', 'HOUR_IN_DAY', 'WEEK_IN_MONTH', 'WEEK_IN_YEAR']
 SORT_ORDERS     = ['ASC', 'DESC']
-COMP_OPERATORS  = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IS NOT', 'IS', 'IN', 'INCLUDES', 'EXCLUDES']
+COMP_OPERATORS  = ['=', '!=', '>', '<', '<=', '>=', 'LIKE', 'IN', 'NOT IN', 'INCLUDES', 'EXCLUDES']
 LOGIC_OPERATORS = ['AND', 'OR', 'NOT']
 BOOLEAN         = ['true', 'false', 'null']
 MATH            = ['+', '-']
