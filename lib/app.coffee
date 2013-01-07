@@ -27,7 +27,7 @@ app.post "/proxy", (req, res) ->
     urlParsed = url.parse(message.url)
     if urlParsed.protocol == 'https:' &&
        urlParsed.hostname.match(/\.(salesforce|force|database)\.com$/)
-      console.log message
+      # console.log message
       request(message).pipe(res)
     else
       res.send(400, "invalid url")
