@@ -7,6 +7,7 @@
     "npm": "1.1.x"
   },
   "scripts": {
+    "postinstall": "npm install grunt-cli",
     "prestart": "grunt build",
     "start": "coffee lib/app",
     "test": "grunt test"
