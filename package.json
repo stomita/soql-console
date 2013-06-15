@@ -26,6 +26,8 @@
     "grunt-contrib-coffee": "~0.7.0",
     "grunt-contrib-watch": "~0.3.1",
     "grunt-contrib-copy": "~0.4.1",
-    "grunt-contrib-clean": "~0.4.1"
+    "grunt-contrib-clean": "~0.4.1",
+    "grunt-requirejs": "~0.3.5",
+    "grunt-commonjs": "~0.2.0rc7"
   }
 }

@@ -1,4 +1,5 @@
 fs = require 'fs'
+path = require 'path'
 
 module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-coffee'
@@ -6,20 +7,13 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-clean'
+  grunt.loadNpmTasks 'grunt-requirejs'
 
   grunt.initConfig
 
     watch:
       files: "src/**/*.coffee"
       tasks: [ "coffee" ]
-
-    copy:
-      files:
-        expand: true
-        cwd: "src/"
-        src: "**/*.js"
-        dest: "public/js"
-        filter: 'isFile'
 
     coffee:
       compile:
@@ -34,6 +28,11 @@ module.exports = (grunt) ->
         src: [ '**/*.coffee' ]
         dest: 'test/'
         ext: '.js'
+    amd:
+      build:
+        cwd: 'src/'
+        src: [ '**/*.js' ]
+        dest: 'public/js/'
 
     simplemocha:
       options:
@@ -49,6 +48,12 @@ module.exports = (grunt) ->
       "public/js/**/*.js"
     ]
 
+
+  grunt.registerMultiTask 'amd', 'Wrap .js files for amd.', ->
+    @files.forEach (file) ->
+      file.src.map (filepath) ->
+        original = grunt.file.read(path.join(file.cwd, filepath))
+        grunt.file.write(file.dest + filepath, 'define(function(require, exports, module) {\n' + original + '\n});\n\n')
 
   grunt.registerTask 'build:parser', ->
     console.log "building parser..."
@@ -67,6 +72,6 @@ module.exports = (grunt) ->
       fname = file.replace(/\.json$/, '')
       fs.writeFileSync "#{dataDir + fname}.js", "module.exports=#{data}", "utf-8"
 
-  grunt.registerTask 'build', [ 'build:parser', 'build:stub', 'coffee:compile', 'copy', 'coffee:test', 'simplemocha' ]
+  grunt.registerTask 'build', [ 'build:parser', 'build:stub', 'coffee:compile', 'amd', 'coffee:test', 'simplemocha' ]
   grunt.registerTask 'default', 'build'
 
