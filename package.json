@@ -7,7 +7,7 @@
     "npm": "1.1.x"
   },
   "scripts": {
-    "start": "coffee lib/app"
+    "start": "coffee lib/app.coffee"
   },
   "dependencies": {
     "coffee-script": "1.3.x",
