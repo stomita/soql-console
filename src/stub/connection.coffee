@@ -32,7 +32,6 @@ module.exports =
       name = name.toUpperCase()
       if sobjects[name]?
         responder(callback).onSuccess(sobjects[name])
-        callback(null, sobjects[name])
       else
         responder(callback).onFailure( message: 'Error' )
     , @delay

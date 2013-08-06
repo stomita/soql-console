@@ -105,9 +105,9 @@ autocomplete = (textarea, runQuery) ->
     text = textarea.val()
     cpos = textarea.caretPosition()
     SoqlCompl.connection = module.exports.connection
-    pivot = SoqlCompl.complete text, cpos, (candidates, pivot) ->
+    pivot = SoqlCompl.complete text, cpos, (err, res) ->
       setTimeout ->
-        handleCandidates(text, cpos, candidates, pivot)
+        handleCandidates(text, cpos, res.candidates, res.pivot)
       , 10
     pt = textarea.charPosition(pivot)
     complMenu.empty()

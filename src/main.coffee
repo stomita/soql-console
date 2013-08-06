@@ -11,6 +11,11 @@ define "system", {}
 if location.hostname != 'localhost' && location.protocol != 'https:'
   location.protocol = 'https:'
 
+requirejs.config
+  paths:
+    async: "/lib/async/async"
+
+
 require [ 
   './soql-autocompl'
   './stub/connection'
