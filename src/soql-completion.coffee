@@ -5,22 +5,11 @@
 #
 ###
 
+async  = require "async"
 lexer  = require "./lexer"
 parser = require "./parser"
 Node   = require "./node"
 
-
-###
-###
-asyncMap = (arr, asyncFn, callback) ->
-  cnt = arr.length
-  rets = new Array(arr.length)
-  return callback(rets) if cnt==0
-  for a, i in arr
-    asyncFn a, (ret) ->
-      rets[i] = ret
-      cnt--
-      return callback(rets) if cnt==0
 
 ###
 ###
@@ -48,17 +37,18 @@ complete = (text, caret, callback) ->
       else
         continue
     nodes.push(n)
-  asyncMap nodes, (n, cb) ->
+  async.map nodes, (n, cb) ->
     if n.type == 'ObjectType'
       getObjectTypes(n, cb)
     else if n.type == 'FieldName'
       getFieldNames(n, cb)
     else if n.value
-      cb([ n ])
+      cb(null, [ n ])
     else
-      cb([])
+      cb(null, [])
   ,
-  (rets) ->
+  (err, rets) ->
+    return callback(err) if err
     candidates = []
     candidates.push.apply(candidates, ret) for ret in rets
     candidates = candidates.sort (c1, c2) ->
@@ -67,7 +57,7 @@ complete = (text, caret, callback) ->
       else if c1.value > c2.value then 1
       else if c1.value < c2.value then -1
       else 0
-    callback(candidates, pivot)
+    callback(null, { candidates: candidates, pivot: pivot })
   pivot
 
 
@@ -132,22 +122,18 @@ findCaretPosition = (tokens, caret) ->
 ###
 ###
 getObjectTypes = (node, callback) ->
-  handleError = (err) ->
-    console.error(err)
-    callback(null)
-
   selectTypeRegexp = /^(SelectQuery|InnerSelect)$/
   selectNode = node.findParent(selectTypeRegexp)
-  return handleError(message: "Not inside of select node.") unless selectNode
+  return callback(message: "Not inside of select node.") unless selectNode
   outerSelectNode = selectNode.findParent(selectTypeRegexp)
   # cannot be nested over 2 level
   if outerSelectNode?.findParent(selectTypeRegexp)
-    return handleError(message: "Nested more than 2 levels")
+    return callback(message: "Nested more than 2 levels")
 
   if outerSelectNode # inner select query
     objectType = outerSelectNode.find('ObjectType', selectTypeRegexp)?.value
     getConnection().describeSObject objectType, (err, res) ->
-      return handleError(err) if err
+      return callback(err) if err
       candidates =
         for r in res.childRelationships ? [] when r.relationshipName?
           {
@@ -155,10 +141,10 @@ getObjectTypes = (node, callback) ->
             label: r.relationshipName
             value: r.relationshipName
           }
-      callback(candidates)
+      callback(null, candidates)
   else # root query
     getConnection().describeGlobal (err, res) ->
-      return handleError(err) if err
+      return callback(err) if err
       candidates =
         for s in res.sobjects when String(s.queryable) == "true"
           {
@@ -166,16 +152,12 @@ getObjectTypes = (node, callback) ->
             label: s.label
             value: s.name
           }
-      callback(candidates)
+      callback(null, candidates)
 
 
 ###
 ###
 getFieldNames = (node, callback) ->
-
-  handleError = (err) ->
-    console.error(err)
-    callback([])
 
   handleFields = (fields) ->
     candidates = []
@@ -202,7 +184,7 @@ getFieldNames = (node, callback) ->
             fieldType: field.type
             label: field.label
             value: field.name
-    callback(candidates)
+    callback(null, candidates)
 
   parentFields = []
   n = node
@@ -210,11 +192,11 @@ getFieldNames = (node, callback) ->
 
   selectTypeRegexp = /^(SelectQuery|InnerSelect)$/
   selectNode = node.findParent(selectTypeRegexp)
-  return handleError( message: "Not inside of select node." ) unless selectNode
+  return callback( message: "Not inside of select node." ) unless selectNode
   outerSelectNode = selectNode.findParent(selectTypeRegexp)
   # cannot be nested over 2 level
   if outerSelectNode?.findParent(selectTypeRegexp)
-    return handleError( message: "Nested more than 2 levels" )
+    return callback( message: "Nested more than 2 levels" )
 
   inWhereClause = node.findParent("WhereClause", selectTypeRegexp)?
   inOrderClause = node.findParent("OrderClause", selectTypeRegexp)?
@@ -224,14 +206,14 @@ getFieldNames = (node, callback) ->
     objectType = outerSelectNode.find('ObjectType', selectTypeRegexp)?.value
     relationshipName = selectNode.find('ObjectType', selectTypeRegexp)?.value
     describeNestedObject objectType, relationshipName, (err, so) ->
-      return handleError(err) if err
+      return callback(err) if err
       describeFields so.name, parentFields, (err, fields) ->
-        return handleError(err) if err
+        return callback(err) if err
         handleFields(fields)
   else # root query
     objectType = selectNode.find('ObjectType', selectTypeRegexp)?.value
     describeFields objectType, parentFields, (err, fields) ->
-      return handleError(err) if err
+      return callback(err) if err
       handleFields(fields)
 
 
