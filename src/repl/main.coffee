@@ -80,13 +80,19 @@ rl.on "SIGINT", (e) ->
 
 _soqlBuffer = []
 
-suppressPrompt = false
+outputConfig =
+  prompt: true
+  message: true
+  totalSize: true
+  header: true
+  record: true
 
 promptCommand = ->
   _soqlBuffer = []
   promptMode = "command"
-  rl.setPrompt "SOQL> "
-  rl.prompt() unless suppressPrompt
+  if outputConfig.prompt
+    rl.setPrompt "SOQL> "
+    rl.prompt()
 
 questionPassword = (username) ->
   rl.question "Input Password: ", (password) ->
@@ -94,8 +100,9 @@ questionPassword = (username) ->
 
 promptSOQL = ->
   promptMode = "soql"
-  rl.setPrompt "   #{_soqlBuffer.length}> "
-  rl.prompt() unless suppressPrompt
+  if outputConfig.prompt
+    rl.setPrompt "   #{_soqlBuffer.length}> "
+    rl.prompt()
 
 parseCommand = (line) ->
   argv = line.replace(/^\s*|\s*$/g, '').split(/\s+/)
@@ -140,7 +147,7 @@ use = (env) ->
     else
       conn = new sf.Connection
         loginUrl: "https://#{env}"
-  log "Using #{env} for login server."
+  output "Using #{env} for login server.", "message"
 
 connect = (username, password, callback) ->
   if username and password
@@ -151,7 +158,7 @@ connect = (username, password, callback) ->
         console.error err.message
         questionPassword(username)
       else
-        log "Logged in as: #{username}"
+        output "Logged in as: #{username}", "message"
         SoqlCompletion.connection = createConnCache(conn)
         SoqlCompletion.connection.describeGlobal (err, res) -> # prefetch global objects
         if callback
@@ -163,11 +170,11 @@ connect = (username, password, callback) ->
   else
     promptCommand()
 
-log = (str) ->
-  console.log str unless suppressPrompt
+output = (str, type) ->
+  console.log str unless outputConfig[type] == false
 
 exit = ->
-  log "Bye."
+  output "Bye.", "message"
   rl.close()
 
 processSOQL = (line) ->
@@ -200,8 +207,9 @@ executeQuery = (soql, callback) ->
 showQueryResult = (res) ->
 #  console.log record for record in res.records
   result = resultTable.convertToFlatTable(res)
-  console.log result.headers.join('\t')
-  console.log row.join('\t') for row in result.rows
+  output result.headers.join('\t'), "header"
+  output row.join('\t'), "record" for row in result.rows
+  output "\nTotal Size : #{res.totalSize}\n", "totalSize"
 
 showHelp = (commands) ->
   console.log "\n  Commands:\n"
@@ -225,11 +233,11 @@ init = ->
   program.option('-u, --username [username]', 'Salesforce username')
          .option('-p, --password [password]', 'Salesforce password (and security token, if available.)')
          .option('-e, --env [env]', 'Login environment ("production","sandbox", or hostname of login server)')
-         .option('-q, --query [query]', 'SOQL query to execute.')
+         .option('-q, --query [query]', 'SOQL query to execute automatically.')
          .parse(process.argv);
   autoExec = null
   if program.query
-    suppressPrompt = true
+    outputConfig.prompt = outputConfig.message = outputConfig.totalSize = false
     autoExec = -> executeQuery(program.query, exit)
   if program.env
     use(program.env)
