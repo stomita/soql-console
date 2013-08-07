@@ -13,7 +13,7 @@ module.exports = (grunt) ->
 
     watch:
       files: "src/**/*.coffee"
-      tasks: [ "coffee" ]
+      tasks: [ "build" ]
 
     coffee:
       compile:
