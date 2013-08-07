@@ -1,8 +1,19 @@
 {
   "author": "Shinichi Tomita <shinichi.tomita@gmail.com>",
   "name": "soql-console",
-  "description": "SOQL console app, works on tty and web UI",
+  "description": "Salesforce SOQL console app, works both on tty and web UI",
   "version": "0.2.0",
+  "keywords": [
+    "salesforce",
+    "force.com",
+    "database.com"
+  ],
+  "homepage": "http://github.com/stomita/soql-console",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/stomita/soql-console.git"
+  },
   "engines": {
     "node": "0.10.x",
     "npm": "1.2.x"
