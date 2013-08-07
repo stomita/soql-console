@@ -72,7 +72,7 @@ rl.on "line", (line) ->
 
 rl.on "SIGINT", (e) ->
   if promptMode == "command" && rl.line == ""
-    rl.close() 
+    exit()
   else
     rl.clearLine()
     promptCommand()
