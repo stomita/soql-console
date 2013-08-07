@@ -14,7 +14,10 @@ Node   = require "./node"
 ###
 ###
 complete = (text, caret, callback) ->
-  tokens = lexer.tokenize(text)
+  try
+    tokens = lexer.tokenize(text)
+  catch e
+    return callback(e)
   # debugTokens tokens
 
   { pos, inserting } = findCaretPosition(tokens, caret)
