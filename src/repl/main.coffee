@@ -6,30 +6,10 @@ commander = require 'commander'
 sf = require 'node-salesforce'
 readline = require './readline'
 stubConn = require '../stub/connection'
+resultTable = require '../result-table'
 SoqlCompletion = require '../soql-completion'
 SoqlCompletion.connection = stubConn
 
-
-
-completeCommand = (line, callback) ->
-#    console.log rl
-    if /^\s*\./.test line
-      completions = '.connect .use .help .exit .quit'.split(' ')
-      hits = completions.filter (c) -> return c.indexOf(line) == 0
-      completions = if hits.length > 0 then hits else completions
-      callback(null, [ completions, line ])
-    else
-      bufferSOQL = _soqlBuffer.join('\n') + '\n'
-      complSOQL = bufferSOQL + rl.line
-      cursor = bufferSOQL.length + rl.cursor
-      SoqlCompletion.complete complSOQL, cursor, (err, res) ->
-        if err
-          callback(null, [])
-        else
-          pivot = res.pivot - bufferSOQL.length
-          inputStr = line.substring(pivot).toUpperCase()
-          candidates = res.candidates.filter (c) -> c.value.toUpperCase().indexOf(inputStr) == 0
-          callback(null, [ candidates.map((c) -> c.value) , line.substring(pivot) ])
 
 
 conn = new sf.Connection()
@@ -39,7 +19,7 @@ createConnCache = (conn) ->
   _globals: null
 
   describeSObject : (sobject, callback) ->
-    type = sobject.toUpperCase()
+    type = sobject?.toUpperCase()
     if @_sobjects[type]?
       callback(null, @_sobjects[type])
     else
@@ -60,6 +40,24 @@ createConnCache = (conn) ->
 ###
 
 promptMode = "command"
+
+completeCommand = (line, callback) ->
+  if /^\s*\./.test line
+    completions = '.connect .use .help .exit .quit'.split(' ')
+    hits = completions.filter (c) -> return c.indexOf(line) == 0
+    callback(null, [ hits, line ])
+  else
+    bufferSOQL = _soqlBuffer.join('\n') + '\n'
+    complSOQL = bufferSOQL + rl.line
+    cursor = bufferSOQL.length + rl.cursor
+    SoqlCompletion.complete complSOQL, cursor, (err, res) ->
+      if err
+        callback(null, [])
+      else
+        pivot = res.pivot - bufferSOQL.length
+        inputStr = line.substring(pivot).toUpperCase()
+        candidates = res.candidates.filter (c) -> c.value.toUpperCase().indexOf(inputStr) == 0
+        callback(null, [ candidates.map((c) -> c.value) , line.substring(pivot) ])
 
 rl = readline.createInterface
   input: process.stdin
@@ -82,11 +80,13 @@ rl.on "SIGINT", (e) ->
 
 _soqlBuffer = []
 
+suppressPrompt = false
+
 promptCommand = ->
   _soqlBuffer = []
   promptMode = "command"
   rl.setPrompt "SOQL> "
-  rl.prompt()
+  rl.prompt() unless suppressPrompt
 
 questionPassword = (username) ->
   rl.question "Input Password: ", (password) ->
@@ -95,7 +95,7 @@ questionPassword = (username) ->
 promptSOQL = ->
   promptMode = "soql"
   rl.setPrompt "   #{_soqlBuffer.length}> "
-  rl.prompt()
+  rl.prompt() unless suppressPrompt
 
 parseCommand = (line) ->
   argv = line.replace(/^\s*|\s*$/g, '').split(/\s+/)
@@ -121,7 +121,14 @@ parseCommand = (line) ->
   cmd.command('.quit')
      .action -> exit()
   cmd.parse(argv)
-
+###
+  cmd.command('.mode [mode]')
+     .description('Set output mode ("csv", "tab", or "column")')
+     .action (mode) ->
+        outputMode = mode
+        promptCommand()
+###
+  
 use = (env) ->
   switch env
     when 'production', 'prod'
@@ -133,9 +140,9 @@ use = (env) ->
     else
       conn = new sf.Connection
         loginUrl: "https://#{env}"
-  console.log "Using #{env} for login server."
+  log "Using #{env} for login server."
 
-connect = (username, password) ->
+connect = (username, password, callback) ->
   if username and password
     rl.pause()
     conn.login username, password, (err, res) ->
@@ -144,16 +151,23 @@ connect = (username, password) ->
         console.error err.message
         questionPassword(username)
       else
-        console.log "Logged in as: #{username}"
+        log "Logged in as: #{username}"
         SoqlCompletion.connection = createConnCache(conn)
-        promptCommand()
+        SoqlCompletion.connection.describeGlobal (err, res) -> # prefetch global objects
+        if callback
+          callback()
+        else
+          promptCommand()
   else if username
     questionPassword(username)
   else
     promptCommand()
 
+log = (str) ->
+  console.log str unless suppressPrompt
+
 exit = ->
-  console.log "Bye."
+  log "Bye."
   rl.close()
 
 processSOQL = (line) ->
@@ -163,7 +177,7 @@ processSOQL = (line) ->
   else
     promptSOQL()
 
-executeQuery = (soql) ->
+executeQuery = (soql, callback) ->
   if conn.accessToken
     rl.pause()
     conn.query soql, (err, res) ->
@@ -172,13 +186,22 @@ executeQuery = (soql) ->
       else
         showQueryResult(res)
       rl.resume()
-      promptCommand()
+      if callback
+        callback()
+      else
+        promptCommand()
   else
     console.error "Not Logged In"
-    promptCommand()
+    if callback
+      callback()
+    else
+      promptCommand()
 
 showQueryResult = (res) ->
-  console.log res
+#  console.log record for record in res.records
+  result = resultTable.convertToFlatTable(res)
+  console.log result.headers.join('\t')
+  console.log row.join('\t') for row in result.rows
 
 showHelp = (commands) ->
   console.log "\n  Commands:\n"
@@ -202,11 +225,16 @@ init = ->
   program.option('-u, --username [username]', 'Salesforce username')
          .option('-p, --password [password]', 'Salesforce password (and security token, if available.)')
          .option('-e, --env [env]', 'Login environment ("production","sandbox", or hostname of login server)')
+         .option('-q, --query [query]', 'SOQL query to execute.')
          .parse(process.argv);
+  autoExec = null
+  if program.query
+    suppressPrompt = true
+    autoExec = -> executeQuery(program.query, exit)
   if program.env
-    use program.env
+    use(program.env)
   if program.username
-    connect program.username, program.password
+    connect(program.username, program.password, autoExec)
   else
     promptCommand()
 
