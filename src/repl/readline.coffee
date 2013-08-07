@@ -747,22 +747,23 @@ Interface::_insertString = (c) ->
     @_moveCursor 0
 
 Interface::_tabComplete = ->
-  self = this
-  self.pause()
-  self.completer self.line.slice(0, self.cursor), (err, rv) ->
-    self.resume()
+  @pause()
+  @completer @line.slice(0, @cursor), (err, rv) =>
+    @resume()
     return  if err
     completions = rv[0]
     completeOn = rv[1]
     if completions and completions.length
       if completions.length is 1
-        self._insertString completions[0].slice(completeOn.length)
+        @line = @line.slice(0, @cursor - completeOn.length) + @line.slice(@cursor)
+        @cursor -= completeOn.length
+        @_insertString completions[0]
       else
-        self.output.write "\r\n"
+        @output.write "\r\n"
         width = completions.reduce((a, b) ->
           (if a.length > b.length then a else b)
         ).length + 2
-        maxColumns = Math.floor(self.columns / width) or 1
+        maxColumns = Math.floor(@columns / width) or 1
         group = []
         c = undefined
         i = 0
@@ -771,18 +772,21 @@ Interface::_tabComplete = ->
         while i < compLen
           c = completions[i]
           if c is ""
-            handleGroup self, group, width, maxColumns
+            handleGroup @, group, width, maxColumns
             group = []
           else
             group.push c
           i++
-        handleGroup self, group, width, maxColumns
+        handleGroup @, group, width, maxColumns
         f = completions.filter((e) ->
           e  if e
         )
         prefix = commonPrefix(f)
-        self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
-      self._refreshLine()
+        if prefix.length > completeOn.length
+          @line = @line.slice(0, @cursor - completeOn.length) + @line.slice(@cursor)
+          @cursor -= completeOn.length
+          @_insertString prefix 
+      @_refreshLine()
 
 
 Interface::_wordLeft = ->

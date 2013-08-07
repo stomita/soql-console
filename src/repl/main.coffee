@@ -3,7 +3,7 @@
 #
 
 sf = require 'node-salesforce'
-readline = require 'readline'
+readline = require './readline'
 stubConn = require '../stub/connection'
 SoqlCompletion = require '../soql-completion'
 SoqlCompletion.connection = stubConn
