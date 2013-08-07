@@ -101,7 +101,7 @@ parseCommand = (line) ->
   argv = line.replace(/^\s*|\s*$/g, '').split(/\s+/)
   argv.unshift('soql', 'cmd') # dummy process arg
   cmd = new commander.Command;
-  cmd.command('.connect <username> [password]')
+  cmd.command('.connect [username] [password]')
      .description('Login to Salesforce using given username and password. Security token should be concatinated to the password if available.')
      .action (username, password) ->
         connect(username, password)
@@ -145,6 +145,7 @@ connect = (username, password) ->
         questionPassword(username)
       else
         console.log "Logged in as: #{username}"
+        SoqlCompletion.connection = createConnCache(conn)
         promptCommand()
   else if username
     questionPassword(username)
