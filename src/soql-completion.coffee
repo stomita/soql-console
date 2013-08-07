@@ -240,7 +240,8 @@ describeFields = (objectType, parentFields, callback) ->
       parentField = parentFields[0]
       parentObjectType = null
       for field in res.fields
-        if field.relationshipName == parentField
+        if field.relationshipName? &&
+           field.relationshipName.toUpperCase() == parentField.toUpperCase()
           refs = field.referenceTo
           refs = if typeof refs == 'string' then [ refs ] else refs
           parentObjectType = if refs.length == 1 then refs[0] else 'Name'
