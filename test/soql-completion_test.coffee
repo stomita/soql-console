@@ -69,8 +69,9 @@ describe "completing", ->
         it "should complete expected candidates", (done) ->
           cs.caret = cs.input.indexOf('|')
           cs.soql = cs.input.replace('|', '')
-          SoqlCompletion.complete cs.soql, cs.caret, (candidates, index) ->
-            expect(candidates).to.be.an('array')
-            cs.expect(candidates, index)
+          SoqlCompletion.complete cs.soql, cs.caret, (err, res) ->
+            expect(res.candidates).to.be.an('array')
+            expect(err).to.be(null)
+            cs.expect(res.candidates, res.pivot)
             done()
 

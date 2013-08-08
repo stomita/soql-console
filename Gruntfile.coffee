@@ -7,13 +7,12 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-clean'
-  grunt.loadNpmTasks 'grunt-requirejs'
 
   grunt.initConfig
 
     watch:
       files: "src/**/*.coffee"
-      tasks: [ "coffee" ]
+      tasks: [ "build" ]
 
     coffee:
       compile:
@@ -28,6 +27,7 @@ module.exports = (grunt) ->
         src: [ '**/*.coffee' ]
         dest: 'test/'
         ext: '.js'
+        
     amd:
       build:
         cwd: 'src/'
@@ -42,11 +42,13 @@ module.exports = (grunt) ->
       all:
         src: "test/**/*.js"
 
-    clean: [
-      "src/**/*.js"
-      "test/**/*.js"
-      "public/js/**/*.js"
-    ]
+    clean:
+      src: [
+        "src/**/*.js"
+        "!src/compiled_parser.js"
+        "test/**/*.js"
+        "public/js/**/*.js"
+      ]
 
 
   grunt.registerMultiTask 'amd', 'Wrap .js files for amd.', ->

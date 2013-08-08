@@ -1,1 +1,2 @@
 *.js
+!compiled_parser.js

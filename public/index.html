@@ -70,8 +70,13 @@
 #alert {
   margin: 10px 0;
 }
-#result {
-
+#links {
+  display: none;
+  text-align: right;
+  margin: 10px 0;
+}
+#result table td.num {
+  text-align: right;
 }
     </style>
   </head>
@@ -109,10 +114,14 @@
         <div id="query">
           <h3>Input SOQL</h3>
           <textarea class="input"></textarea>
-          <button class="btn btn-primary query">Query</button>
           <a href="#help-dialog" id="help-button" class="pull-right" data-toggle="modal">Help</a>
+          <button class="btn btn-primary query">Query</button>
         </div>
         <div id="alert"></div>
+        <div id="links">
+          <a class="csv-link" href="javascript:void(0)">Download as CSV</a> /
+          <a class="tsv-link" href="javascript:void(0)">Download as TSV</a>
+        </div>
         <div id="result">
         </div>
       </div>

@@ -11,13 +11,19 @@ define "system", {}
 if location.hostname != 'localhost' && location.protocol != 'https:'
   location.protocol = 'https:'
 
+requirejs.config
+  paths:
+    async: "/lib/async/async"
+
+
 require [ 
   './soql-autocompl'
   './stub/connection'
   './server-proxy/connection'
   './caret'
   './login'
-], (compl, stubConnection, proxyConnection, caret, login, setting) ->
+  './result-table'
+], (compl, stubConnection, proxyConnection, caret, login, resultTable) ->
   $ ->
     compl.connection = stubConnection
     listeners =
@@ -29,6 +35,8 @@ require [
 ###
 ###
 init = (compl) ->
+
+  resultTable = require './result-table'
 
   ###
   ###
@@ -48,14 +56,29 @@ init = (compl) ->
         elapsedTime = (new Date().getTime() - startTime)
         showMessage "Query executed successfully",
           "elapsed time : #{elapsedTime} msec, total size: #{res.totalSize}"
-        window.$result = res
-        console.log res
+        window.$result = res # for debug
+        html = resultTable.renderAsHTML(res)
+        $('#result').html(html)
+        $('#result > table').addClass('table table-hover table-bordered')
+        $('#links').show()
+        $('#links a').off 'click'
+        $('#links a.csv-link').on 'click', (e) ->
+          e.preventDefault()
+          e.stopPropagation()
+          csv = resultTable.renderAsCSV(res)
+          location.href = "data:text/csv;charset=UTF-8,#{encodeURIComponent(csv)}"
+        $('#links a.tsv-link').on 'click', (e) ->
+          e.preventDefault()
+          e.stopPropagation()
+          tsv = resultTable.renderAsTSV(res)
+          location.href = "data:text/tsv;charset=UTF-8,#{encodeURIComponent(tsv)}"
       onFailure: (err) ->
         stopLoading()
         showMessage err.errorCode, err.message, 'error'
 
   startLoading = ->
-    $('#alert').empty()
+    $('#alert, #result').empty()
+    $('#links').hide()
     $('#console').find('button, textarea').attr('disabled', 'disabled').addClass('disabled')
 
   stopLoading = ->

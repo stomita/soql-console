@@ -105,10 +105,14 @@ autocomplete = (textarea, runQuery) ->
     text = textarea.val()
     cpos = textarea.caretPosition()
     SoqlCompl.connection = module.exports.connection
-    pivot = SoqlCompl.complete text, cpos, (candidates, pivot) ->
-      setTimeout ->
-        handleCandidates(text, cpos, candidates, pivot)
-      , 10
+    pivot = SoqlCompl.complete text, cpos, (err, res) ->
+      if err
+        console.error err.message
+        endCompletion()
+      else
+        setTimeout ->
+          handleCandidates(text, cpos, res.candidates, res.pivot)
+        , 10
     pt = textarea.charPosition(pivot)
     complMenu.empty()
       .append($('<li class="loading" style="font-style:italic">Loading...</li>'))
