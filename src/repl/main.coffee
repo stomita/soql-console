@@ -117,13 +117,15 @@ parseCommand = (line) ->
         use(env)
         promptCommand()
   cmd.command('.help')
-     .description('Show command help')
+     .description('Show command help.')
      .action ->
         showHelp(cmd.commands)
         promptCommand()
   cmd.command('.exit')
+     .description('Exit application.')
      .action -> exit()
   cmd.command('.quit')
+     .description('Exit application. (synonym of .exit)')
      .action -> exit()
   cmd.parse(argv)
 ###
@@ -217,7 +219,7 @@ showHelp = (commands) ->
       output += ' ' + lparen + arg.name + rparen
     output += '  '
     if command._description
-      output += ' ' for i in [0...Math.max(0, 30 - output.length)]
+      output += ' ' for i in [0...Math.max(0, 35 - output.length)]
       output += command._description
     log output
   log '\n'
