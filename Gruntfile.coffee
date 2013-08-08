@@ -42,11 +42,13 @@ module.exports = (grunt) ->
       all:
         src: "test/**/*.js"
 
-    clean: [
-      "src/**/*.js"
-      "test/**/*.js"
-      "public/js/**/*.js"
-    ]
+    clean:
+      src: [
+        "src/**/*.js"
+        "!src/compiled_parser.js"
+        "test/**/*.js"
+        "public/js/**/*.js"
+      ]
 
 
   grunt.registerMultiTask 'amd', 'Wrap .js files for amd.', ->
