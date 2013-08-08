@@ -7,7 +7,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-clean'
-  grunt.loadNpmTasks 'grunt-requirejs'
 
   grunt.initConfig
 
@@ -28,6 +27,7 @@ module.exports = (grunt) ->
         src: [ '**/*.coffee' ]
         dest: 'test/'
         ext: '.js'
+        
     amd:
       build:
         cwd: 'src/'
