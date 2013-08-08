@@ -48,7 +48,7 @@ completeCommand = (line, callback) ->
     callback(null, [ hits, line ])
   else
     bufferSOQL = _soqlBuffer.join('\n') + '\n'
-    complSOQL = bufferSOQL + rl.line
+    complSOQL = bufferSOQL + rl.line.replace(/;\s*$/, '')
     cursor = bufferSOQL.length + rl.cursor
     SoqlCompletion.complete complSOQL, cursor, (err, res) ->
       if err
