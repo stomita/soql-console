@@ -56,7 +56,7 @@ $ soql --help
     -q, --query [query]        SOQL query to execute automatically.
 </pre>
 
-### Intaractive Commands
+### Interactive Commands
 
 Type ".help" to see command help menu when you are in REPL.
 
