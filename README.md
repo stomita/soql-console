@@ -9,7 +9,7 @@ Salesforce SOQL console app with metadata-aware word completion. Works both on T
 ## Install
 
 <pre>
-  npm install soql-console
+  npm install -g soql-console
 </pre>
 
 
