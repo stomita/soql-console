@@ -147,7 +147,7 @@ use = (env) ->
     else
       conn = new sf.Connection
         loginUrl: "https://#{env}"
-  output "Using #{env} for login server.", "message"
+  log "Using #{env} for login server.", "message"
 
 connect = (username, password, callback) ->
   if username and password
@@ -158,7 +158,7 @@ connect = (username, password, callback) ->
         console.error err.message
         questionPassword(username)
       else
-        output "Logged in as: #{username}", "message"
+        log "Logged in as: #{username}", "message"
         SoqlCompletion.connection = createConnCache(conn)
         SoqlCompletion.connection.describeGlobal (err, res) -> # prefetch global objects
         if callback
@@ -170,11 +170,11 @@ connect = (username, password, callback) ->
   else
     promptCommand()
 
-output = (str, type) ->
+log = (str, type) ->
   console.log str unless outputConfig[type] == false
 
 exit = ->
-  output "Bye.", "message"
+  log "Bye.", "message"
   rl.close()
 
 processSOQL = (line) ->
@@ -207,12 +207,12 @@ executeQuery = (soql, callback) ->
 showQueryResult = (res) ->
 #  console.log record for record in res.records
   result = resultTable.convertToFlatTable(res)
-  output result.headers.join('\t'), "header"
-  output row.join('\t'), "record" for row in result.rows
-  output "\nTotal Size : #{res.totalSize}\n", "totalSize"
+  log result.headers.join('\t'), "header"
+  log row.join('\t'), "record" for row in result.rows
+  log "\nTotal Size : #{res.totalSize}\n", "totalSize"
 
 showHelp = (commands) ->
-  console.log "\n  Commands:\n"
+  log "\n  Commands:\n"
   for command in commands
     output = '   '
     output += command._name
@@ -223,8 +223,8 @@ showHelp = (commands) ->
     if command._description
       output += ' ' for i in [0...Math.max(0, 30 - output.length)]
       output += command._description
-    console.log output
-  console.log '\n'
+    log output
+  log '\n'
 
 ###
 ###
