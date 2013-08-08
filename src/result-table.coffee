@@ -2,6 +2,54 @@
 # result-table.coffee
 ###
 
+renderAsTSV = (result) ->
+  table = convertToFlatTable(result)
+  tsv = []
+  tsv.push((table.headers).join('\t'))
+  for row in table.rows
+    tsv.push(row.join('\t'))
+  tsv.join('\n')
+
+renderAsCSV = (result) ->
+  table = convertToFlatTable(result)
+  csv = []
+  csv.push((csvformat(h) for h in table.headers).join(','))
+  for row in table.rows
+    csv.push((csvformat(v) for v in row).join(','))
+  csv.join('\n')
+
+renderAsHTML = (result) ->
+  table = convertToFlatTable(result)
+  html = '<table>'
+  html += '<thead><tr>'
+  html += "<th>#{htmlesc(h)}</th>" for h in table.headers
+  html += '</tr></thead>'
+  html += '<tbody>'
+  for row in table.rows
+    html += '<tr>'
+    for v in row
+      type = switch typeof v
+               when 'number' then 'num' 
+               when 'string' then 'str'
+               else ''
+      html += "<td class=\"#{type}\">#{htmlesc(v)}</td>"
+    html += '</tr>'
+  html += '</tbody>'
+  html += '</table>'
+  html
+
+htmlesc = (str) ->
+  str = '' if str == null || str == undefined
+  String(str).replace(/</g, '&lt;')
+             .replace(/>/g, '&gt;')
+             .replace(/&/g, '&amp;')
+             .replace(/[\r\n]/g, '<br>')
+
+csvformat = (str) ->
+  str = '' if str == null || str == undefined
+  str = String(str).replace(/"/g, '""')
+  '"' + str + '"'
+
 convertToFlatTable = (result) ->
   headers = {}
   rows = []
@@ -69,5 +117,9 @@ scanHeaders = (record, headers) ->
       else
         headers[name] = true
 
-exports.convertToFlatTable = convertToFlatTable
+module.exports =
+  renderAsTSV: renderAsTSV
+  renderAsCSV: renderAsCSV
+  renderAsHTML: renderAsHTML
+  convertToFlatTable: convertToFlatTable
 

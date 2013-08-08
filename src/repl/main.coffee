@@ -84,8 +84,6 @@ outputConfig =
   prompt: true
   message: true
   totalSize: true
-  header: true
-  record: true
 
 promptCommand = ->
   _soqlBuffer = []
@@ -205,10 +203,8 @@ executeQuery = (soql, callback) ->
       promptCommand()
 
 showQueryResult = (res) ->
-#  console.log record for record in res.records
-  result = resultTable.convertToFlatTable(res)
-  log result.headers.join('\t'), "header"
-  log row.join('\t'), "record" for row in result.rows
+  table = resultTable.renderAsTSV(res)
+  log table
   log "\nTotal Size : #{res.totalSize}\n", "totalSize"
 
 showHelp = (commands) ->
