@@ -44,6 +44,7 @@ connect = (force) ->
       accessToken: accessToken
       instanceUrl: instanceUrl
       id: id
+    connection.clearCache()
     connection.getUserInfo (err, userInfo) ->
       if err
         loginDialog.modal('show') if force

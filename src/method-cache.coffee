@@ -66,4 +66,6 @@ exports.create = (obj, cacheables) ->
 
   proxy._cache = resultCaches
   proxy._createCacheKey = createCacheKey
+  proxy.clearCache = ->
+    delete resultCaches[key] for key of resultCaches
   proxy
