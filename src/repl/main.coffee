@@ -185,7 +185,7 @@ processSOQL = (line) ->
     promptSOQL()
 
 executeQuery = (soql, callback) ->
-  if conn.accessToken
+  if /\S/.test(soql) && conn.accessToken
     rl.pause()
     conn.query soql, (err, res) ->
       if err
@@ -198,7 +198,7 @@ executeQuery = (soql, callback) ->
       else
         promptCommand()
   else
-    console.error "Not Logged In"
+    console.error "Not Logged In" unless conn.accessToken
     if callback
       callback()
     else
@@ -232,7 +232,7 @@ init = ->
          .option('-p, --password [password]', 'Salesforce password (and security token, if available.)')
          .option('-e, --env [env]', 'Login environment ("production","sandbox", or hostname of login server)')
          .option('-q, --query [query]', 'SOQL query to execute automatically.')
-         .parse(process.argv);
+         .parse(process.argv)
   autoExec = null
   if program.query
     outputConfig.prompt = outputConfig.message = outputConfig.totalSize = false
