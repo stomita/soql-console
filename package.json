@@ -2,7 +2,7 @@
   "author": "Shinichi Tomita <shinichi.tomita@gmail.com>",
   "name": "soql-console",
   "description": "Salesforce SOQL console app with metadata-aware word completion. Works both on TTY and web UI.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "keywords": [
     "salesforce",
     "force.com",
@@ -22,7 +22,7 @@
     "start": "coffee src/server/app.coffee"
   },
   "bin": {
-    "soql": "bin/repl.js"
+    "soql": "bin/soql"
   },
   "dependencies": {
     "async": "0.2.x",
