@@ -22,7 +22,7 @@
     "start": "coffee src/server/app.coffee"
   },
   "bin": {
-    "soql": "bin/repl.js"
+    "soql": "bin/soql"
   },
   "dependencies": {
     "async": "0.2.x",
