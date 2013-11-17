@@ -79,7 +79,8 @@ setLoginMenu = (loggedIn) ->
 authorize = ->
   server = loginDialog.find('select[name=env]').val()
   server = loginDialog.find('input[name=server]').val() if server == "_others_"
-  authzUrl = "https://#{server}/services/oauth2/authorize"
+  loginUrl = "https://#{server}"
+  authzUrl = "#{loginUrl}/services/oauth2/authorize"
   authzUrl += "?response_type=token"
   authzUrl += "&client_id=#{config.clientId}"
   authzUrl += "&redirect_uri=#{encodeURIComponent(config.redirectUri)}"
@@ -98,6 +99,7 @@ authorize = ->
         params = parseQueryString(hash)
         storage.set('accessToken', params.access_token)
         storage.set('instanceUrl', params.instance_url)
+        storage.set('loginUrl', loginUrl)
         storage.set('id', params.id)
         clearInterval(PID)
         PID = null
@@ -122,9 +124,13 @@ parseQueryString = (qstr) ->
 ###
 logout = ->
   if confirm "Are you sure you want to logout ?"
-    storage.remove('accessToken')
-    storage.remove('instanceUrl')
-    connect()
+    accessToken = storage.get('accessToken');
+    loginUrl = storage.get('loginUrl') || "https://login.salesforce.com"
+    revokeUrl = "#{loginUrl}/services/oauth2/revoke?token=#{accessToken}&callback=?"
+    $.getJSON revokeUrl, (res) ->
+      storage.remove('accessToken')
+      storage.remove('instanceUrl')
+      connect()
 
 
 ###
