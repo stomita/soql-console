@@ -7,8 +7,16 @@ renderAsTSV = (result) ->
   tsv = []
   tsv.push((table.headers).join('\t'))
   for row in table.rows
-    tsv.push(row.join('\t'))
+    tsv.push((tsvformat(v) for v in row).join('\t'))
   tsv.join('\n')
+
+tsvformat = (str) ->
+  str = '' if str == null || str == undefined
+  str = String(str)
+  if /[\n\t]/.test(str)
+    '"' + str.replace(/"/g, '""') + '"'
+  else
+    str
 
 renderAsCSV = (result) ->
   table = convertToFlatTable(result)
