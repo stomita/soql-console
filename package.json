@@ -2,7 +2,7 @@
   "author": "Shinichi Tomita <shinichi.tomita@gmail.com>",
   "name": "soql-console",
   "description": "Salesforce SOQL console app with metadata-aware word completion. Works both on TTY and web UI.",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "keywords": [
     "salesforce",
     "force.com",
