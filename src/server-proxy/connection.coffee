@@ -35,7 +35,7 @@ module.exports = methodCache.create({
     @accessToken = options.accessToken
     @instanceUrl = options.instanceUrl
     @id = options.id
-    @version = options.version || '26.0'
+    @version = options.version || '53.0'
 
   describeGlobal: (callback) ->
     request {
